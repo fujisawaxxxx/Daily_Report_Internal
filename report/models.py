@@ -1,0 +1,30 @@
+from django.db import models
+from django.contrib.auth.models import User
+
+# Create your models here.
+class DailyReport(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='ユーザー')
+    date = models.DateField(verbose_name='日付')
+    boss_confirmation = models.BooleanField(verbose_name='上司確認', default=False)
+    
+    def __str__(self):
+        return f"{self.date} - {self.user.username}"
+    
+    class Meta:
+        verbose_name = '日報'
+        verbose_name_plural = '日報'
+
+class DailyReportDetail(models.Model):
+    report = models.ForeignKey(DailyReport, on_delete=models.CASCADE, related_name='details', verbose_name='日報')
+    start_time = models.TimeField(verbose_name='開始時間', help_text='時:分')
+    end_time = models.TimeField(verbose_name='終了時間', help_text='時:分')
+    work_title = models.CharField(verbose_name='作業内容', max_length=100)
+    work_detail = models.TextField(verbose_name='作業詳細')
+    remarks = models.TextField(verbose_name='備考', blank=True, null=True)
+    
+    def __str__(self):
+        return f"{self.start_time}-{self.end_time}: {self.work_title}"
+    
+    class Meta:
+        verbose_name = '作業詳細'
+        verbose_name_plural = '作業詳細'
