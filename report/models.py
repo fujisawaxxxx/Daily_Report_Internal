@@ -3,12 +3,12 @@ from django.contrib.auth.models import User
 
 # Create your models here.
 class DailyReport(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='ユーザー')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='ユーザー', null=True)
     date = models.DateField(verbose_name='日付')
     boss_confirmation = models.BooleanField(verbose_name='上司確認', default=False)
     
     def __str__(self):
-        return f"{self.date} - {self.user.username}"
+        return f"{self.date} - {self.user.username if self.user else '未設定'}"
     
     class Meta:
         verbose_name = '日報'
@@ -23,7 +23,7 @@ class DailyReportDetail(models.Model):
     remarks = models.TextField(verbose_name='備考', blank=True, null=True)
     
     def __str__(self):
-        return f"{self.start_time}-{self.end_time}: {self.work_title}"
+        return ""  # 空文字列を返すことで表示しないようにする
     
     class Meta:
         verbose_name = '作業詳細'

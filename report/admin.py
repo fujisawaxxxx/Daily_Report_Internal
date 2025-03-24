@@ -10,8 +10,8 @@ class DailyReportDetailForm(forms.ModelForm):
             'start_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'style': 'width: 100px;'}),
             'end_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'style': 'width: 100px;'}),
             'work_title': forms.TextInput(attrs={'style': 'width: 150px;'}),
-            'work_detail': forms.Textarea(attrs={'style': 'width: 200px; height: 60px;'}),
-            'remarks': forms.Textarea(attrs={'style': 'width: 200px; height: 60px;'}),
+            'work_detail': forms.TextInput(attrs={'style': 'width: 200px;'}),
+            'remarks': forms.TextInput(attrs={'style': 'width: 200px;'}),
         }
 
 class DailyReportDetailInline(admin.TabularInline):
@@ -19,6 +19,9 @@ class DailyReportDetailInline(admin.TabularInline):
     form = DailyReportDetailForm
     extra = 1  # デフォルトで表示される空のフォームの数
     fields = ('start_time', 'end_time', 'work_title', 'work_detail', 'remarks')
+    verbose_name = ""
+    verbose_name_plural = "作業詳細（追加するには「＋」ボタンをクリック）"
+    show_change_link = False
 
 class DailyReportForm(forms.ModelForm):
     class Meta:
@@ -45,8 +48,50 @@ class DailyReportAdmin(admin.ModelAdmin):
         }),
     )
     
+    def get_queryset(self, request):
+        """ユーザーが見られる日報を制限するメソッド"""
+        qs = super().get_queryset(request)
+        # スーパーユーザーは全て閲覧可能
+        if request.user.is_superuser:
+            return qs
+        # 一般ユーザーは自分の日報のみ閲覧可能
+        return qs.filter(user=request.user)
+    
+    def has_view_permission(self, request, obj=None):
+        """閲覧権限の確認"""
+        # スーパーユーザーは常に閲覧可能
+        if request.user.is_superuser:
+            return True
+        # objがNoneの場合はリスト表示の権限チェック
+        if obj is None:
+            return True
+        # 自分の日報のみ閲覧可能
+        return obj.user == request.user
+    
+    def has_change_permission(self, request, obj=None):
+        """編集権限の確認"""
+        # スーパーユーザーは常に編集可能
+        if request.user.is_superuser:
+            return True
+        # objがNoneの場合はリスト表示の権限チェック
+        if obj is None:
+            return True
+        # 自分の日報のみ編集可能
+        return obj.user == request.user
+    
+    def has_delete_permission(self, request, obj=None):
+        """削除権限の確認"""
+        # スーパーユーザーは常に削除可能
+        if request.user.is_superuser:
+            return True
+        # objがNoneの場合はリスト表示の権限チェック
+        if obj is None:
+            return True
+        # 自分の日報のみ削除可能
+        return obj.user == request.user
+    
     def get_username(self, obj):
-        return obj.user.username
+        return obj.user.username if obj.user else "未設定"
     get_username.short_description = 'ユーザー'
     
     def get_work_titles(self, obj):
