@@ -18,9 +18,9 @@ class DailyReportDetail(models.Model):
     report = models.ForeignKey(DailyReport, on_delete=models.CASCADE, related_name='details', verbose_name='日報')
     start_time = models.TimeField(verbose_name='開始時間', help_text='時:分')
     end_time = models.TimeField(verbose_name='終了時間', help_text='時:分')
-    work_title = models.CharField(verbose_name='作業内容', max_length=100)
-    work_detail = models.TextField(verbose_name='作業詳細')
-    remarks = models.TextField(verbose_name='備考', blank=True, null=True)
+    work_title = models.CharField(verbose_name='作業内容', max_length=100, null=True, blank=True)
+    work_detail = models.TextField(verbose_name='作業詳細', null=True, blank=True)
+    remarks = models.TextField(verbose_name='備考', null=True, blank=True)
     
     def __str__(self):
         return ""  # 空文字列を返すことで表示しないようにする
