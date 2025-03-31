@@ -2,6 +2,7 @@ from django.contrib import admin
 from django import forms
 from .models import DailyReport, DailyReportDetail
 from django.forms.models import BaseInlineFormSet
+from django.utils import timezone
 
 class DailyReportDetailForm(forms.ModelForm):
     class Meta:
@@ -68,6 +69,12 @@ class DailyReportAdmin(admin.ModelAdmin):
             'fields': ('date', 'boss_confirmation'),
         }),
     )
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if not obj:  # 新規作成時のみ
+            form.base_fields['date'].initial = timezone.now().date()
+        return form
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
