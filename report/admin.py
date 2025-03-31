@@ -19,10 +19,11 @@ class DailyReportDetailForm(forms.ModelForm):
 class DailyReportDetailInline(admin.TabularInline):
     model = DailyReportDetail
     form = DailyReportDetailForm
-    fields = ('start_time', 'end_time', 'work_title', 'work_detail', 'remarks')
+    fields = ('start_time', 'end_time', 'work_title', 'work_detail')
     verbose_name = ""
     verbose_name_plural = "作業詳細（追加するには「＋」ボタンをクリック）"
     show_change_link = False
+    extra = 1  # 常に1行の空行を表示
 
     def get_extra(self, request, obj=None, **kwargs):
         return 0 if obj else 8
@@ -49,9 +50,10 @@ class DailyReportDetailInline(admin.TabularInline):
 class DailyReportForm(forms.ModelForm):
     class Meta:
         model = DailyReport
-        fields = ('date', 'boss_confirmation')
+        fields = ('date', 'boss_confirmation', 'remarks')
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
+            'remarks': forms.Textarea(attrs={'rows': 4}),
         }
 
 @admin.register(DailyReport)
@@ -66,7 +68,7 @@ class DailyReportAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('date', 'boss_confirmation'),
+            'fields': ('date', 'boss_confirmation', 'remarks'),
         }),
     )
 
