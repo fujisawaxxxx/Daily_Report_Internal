@@ -93,7 +93,8 @@ class DailyReportAdmin(admin.ModelAdmin):
     get_username.short_description = 'ユーザー'
 
     def get_work_titles(self, obj):
-        return ", ".join([detail.work_title for detail in obj.details.all()[:3]])
+        titles = [detail.work_title for detail in obj.details.all()[:3] if detail.work_title]
+        return ", ".join(titles) if titles else "-"
     get_work_titles.short_description = '作業内容'
 
     def save_model(self, request, obj, form, change):
