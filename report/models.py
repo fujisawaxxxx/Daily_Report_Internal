@@ -24,7 +24,7 @@ class DailyReportDetail(models.Model):
     work_detail = models.TextField('作業詳細', blank=True, null=True)
     
     def __str__(self):
-        return f"{self.work_title or '作業なし'} ({self.start_time} - {self.end_time})"
+        return ''  # 空文字列を返すように変更
     
     class Meta:
         verbose_name = '作業詳細'

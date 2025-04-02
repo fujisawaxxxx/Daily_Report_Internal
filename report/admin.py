@@ -20,7 +20,7 @@ class DailyReportDetailInline(admin.TabularInline):
     model = DailyReportDetail
     form = DailyReportDetailForm
     fields = ('start_time', 'end_time', 'work_title', 'work_detail')
-    verbose_name = ""
+    verbose_name = "作業詳細"
     verbose_name_plural = "作業詳細（追加するには「＋」ボタンをクリック）"
     show_change_link = False
     extra = 1  # 常に1行の空行を表示
@@ -47,6 +47,13 @@ class DailyReportDetailInline(admin.TabularInline):
                 super().__init__(*args, **kwargs)
         return InitialFormSet
 
+    def get_queryset(self, request):
+        # 既存のレコードを取得する際に、__str__メソッドの出力を上書き
+        qs = super().get_queryset(request)
+        for obj in qs:
+            obj.__str__ = lambda self: ''  # 空文字列を返すように上書き
+        return qs
+
 class DailyReportForm(forms.ModelForm):
     class Meta:
         model = DailyReport
@@ -65,12 +72,7 @@ class DailyReportAdmin(admin.ModelAdmin):
     date_hierarchy = 'date'
     ordering = ('-date',)
     inlines = [DailyReportDetailInline]
-
-    fieldsets = (
-        (None, {
-            'fields': ('date', 'boss_confirmation', 'remarks'),
-        }),
-    )
+    fields = ('date', 'boss_confirmation', 'remarks')
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
