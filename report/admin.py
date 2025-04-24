@@ -223,9 +223,26 @@ class DailyReportAdmin(admin.ModelAdmin):
             if detail.work_title and detail.start_time and detail.end_time:
                 work_details.append(f"{detail.start_time}〜{detail.end_time}: {detail.work_title} - {detail.work_detail or ''}")
         
+        # 日報へのURLを作成
+        report_url = f":8000/admin/report/dailyreport/{report.id}/change/"
+        # 完全なURLを取得するためのドメイン設定
+        domain = None
+        if hasattr(settings, 'ALLOWED_HOSTS') and settings.ALLOWED_HOSTS:
+            for host in settings.ALLOWED_HOSTS:
+                if host not in ['*', 'localhost', '127.0.0.1']:
+                    domain = host
+                    break
+            if not domain:
+                domain = 'localhost:8000'  # デフォルト値
+        
+        full_url = f"http://{domain}{report_url}"
+        
         # メール本文を作成
         message = f"{user.username}さんの日報が保存されました。\n"
         message += f"日付: {report.date}\n\n"
+        
+        # 日報へのURLを追加
+        message += f"日報の詳細を確認する: {full_url}\n\n"
         
         message += "【作業内容】\n"
         message += "\n".join(work_details) if work_details else "記録なし\n"
