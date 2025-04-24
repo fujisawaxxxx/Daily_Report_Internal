@@ -5,6 +5,9 @@ from django.forms.models import BaseInlineFormSet
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 import logging
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib.auth.models import Group, User
 
 logger = logging.getLogger(__name__)
 
@@ -206,6 +209,61 @@ class DailyReportAdmin(admin.ModelAdmin):
                 obj.comment = original.comment
         
         super().save_model(request, obj, form, change)
+
+        # 保存ボタンが押されたらユーザーのメールアドレスに通知メールを送信
+        self.send_notification_email(request.user, obj)
+
+    def send_notification_email(self, user, report):
+        """日報が保存されたことを通知するメールを送信する"""
+        subject = f"日報保存通知: {user.username} - {report.date}"
+        
+        # 作業内容を取得
+        work_details = []
+        for detail in report.details.all():
+            if detail.work_title and detail.start_time and detail.end_time:
+                work_details.append(f"{detail.start_time}〜{detail.end_time}: {detail.work_title} - {detail.work_detail or ''}")
+        
+        # メール本文を作成
+        message = f"{user.username}さんの日報が保存されました。\n"
+        message += f"日付: {report.date}\n\n"
+        
+        message += "【作業内容】\n"
+        message += "\n".join(work_details) if work_details else "記録なし\n"
+        
+        message += f"\n【備考】\n{report.remarks or 'なし'}\n"
+        
+        if report.comment:
+            message += f"\n【コメント】\n{report.comment}\n"
+        
+        message += f"\n【上司確認】: {'済' if report.boss_confirmation else '未確認'}"
+        
+        from_email = settings.EMAIL_HOST_USER
+        # 送信先のメールアドレスを設定
+        recipient_emails = []
+        
+        # 上司のメールアドレス（リーダーグループのメンバー）を取得
+        try:
+            leader_group = Group.objects.get(name='リーダー')
+            leaders = User.objects.filter(groups=leader_group)
+            for leader in leaders:
+                if leader.email:
+                    recipient_emails.append(leader.email)
+        except Group.DoesNotExist:
+            pass
+            
+        # もしEMAIL_NOTIFICATIONセッティングがあれば、そのメールアドレスも追加
+        if hasattr(settings, 'EMAIL_NOTIFICATION') and settings.EMAIL_NOTIFICATION:
+            recipient_emails.append(settings.EMAIL_NOTIFICATION)
+        
+        # 送信先が設定されていなければ、ユーザー自身のメールアドレスを使用
+        if not recipient_emails and user.email:
+            recipient_emails.append(user.email)
+        
+        if recipient_emails:  # メールアドレスが設定されている場合のみ送信
+            try:
+                send_mail(subject, message, from_email, recipient_emails)
+            except Exception as e:
+                logger.error(f"メール送信エラー: {e}")
 
     # リクエストオブジェクトを保存するためのミドルウェア
     def changelist_view(self, request, extra_context=None):

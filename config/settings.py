@@ -27,6 +27,18 @@ DEBUG = True
 
 ALLOWED_HOSTS =  ['*', '192.168.1.196', 'localhost', '127.0.0.1']
 
+# クロスオリジンセキュリティ設定
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None  # 開発環境ではNoneに設定
+
+# メール設定を追加（Daily_Report/settings.pyから転記）
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'ag-mails@ag-media.co.jp'
+EMAIL_HOST_PASSWORD = 'wvllexijazsmhbad'  # アプリパスワード
+# 通知先のメールアドレス（オプション）
+EMAIL_NOTIFICATION = 'leader@example.com'
 
 # Application definition
 
