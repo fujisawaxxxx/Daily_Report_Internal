@@ -3,6 +3,10 @@ from django import forms
 from .models import DailyReport, DailyReportDetail
 from django.forms.models import BaseInlineFormSet
 from django.utils import timezone
+from django.utils.safestring import mark_safe
+import logging
+
+logger = logging.getLogger(__name__)
 
 class DailyReportDetailForm(forms.ModelForm):
     class Meta:
@@ -68,18 +72,23 @@ class DailyReportDetailInline(admin.TabularInline):
         return qs
 
 class DailyReportForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
+        super().__init__(*args, **kwargs)
+
     class Meta:
         model = DailyReport
-        fields = ('date', 'boss_confirmation', 'remarks')
+        fields = ('date', 'boss_confirmation', 'remarks', 'comment')
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
             'remarks': forms.Textarea(attrs={'rows': 4}),
+            'comment': forms.Textarea(attrs={'rows': 4}),
         }
 
 @admin.register(DailyReport)
 class DailyReportAdmin(admin.ModelAdmin):
     form = DailyReportForm
-    list_display = ('date', 'get_username', 'get_work_titles', 'boss_confirmation')
+    list_display = ('date', 'get_username', 'get_work_titles', 'custom_boss_confirmation')
     list_filter = ('date', 'user', 'boss_confirmation')
     search_fields = ('user__username', 'details__work_title', 'details__work_detail')
     date_hierarchy = 'date'
@@ -90,16 +99,47 @@ class DailyReportAdmin(admin.ModelAdmin):
         (None, {
             'fields': ('date',),
         }),
+        ('コメント', {
+            'fields': ('comment',),
+        }),
         ('確認・報告事項', {
-            'fields': ('boss_confirmation', 'remarks', 'comment'),
+            'fields': ('boss_confirmation', 'remarks'),
             'classes': ('collapse',),
         }),
     )
 
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+        # fieldsにcommentが含まれていることを確認
+        if 'comment' not in fields:
+            fields = list(fields)
+            fields.append('comment')
+        return fields
+
     def get_form(self, request, obj=None, **kwargs):
+        # リクエストをフォームに渡す
         form = super().get_form(request, obj, **kwargs)
+        form.request = request
+
         if not obj:  # 新規作成時のみ
             form.base_fields['date'].initial = timezone.now().date()
+        
+        # リーダーおよび管理者以外はコメントフィールドを無効化
+        is_superuser = request.user.is_superuser
+        is_leader = request.user.groups.filter(name='リーダー').exists()
+        logger.info(f"Get form - User: {request.user.username}, Leader: {is_leader}, Super: {is_superuser}")
+        
+        # commentフィールドの存在チェック
+        if 'comment' in form.base_fields:
+            if not is_superuser and not is_leader:
+                form.base_fields['comment'].widget.attrs['disabled'] = 'disabled'
+                form.base_fields['comment'].widget.attrs['readonly'] = 'readonly'
+            else:
+                # リーダーまたは管理者の場合は編集可能に
+                form.base_fields['comment'].widget.attrs.pop('disabled', None)
+                form.base_fields['comment'].widget.attrs.pop('readonly', None)
+                logger.info(f"Enabled comment field for {request.user.username}")
+        
         return form
 
     def get_queryset(self, request):
@@ -116,7 +156,7 @@ class DailyReportAdmin(admin.ModelAdmin):
         return obj is None or obj.user == request.user
 
     def has_change_permission(self, request, obj=None):
-        if request.user.is_superuser:
+        if request.user.is_superuser or request.user.groups.filter(name='リーダー').exists():
             return True
         return obj is None or obj.user == request.user
 
@@ -124,6 +164,22 @@ class DailyReportAdmin(admin.ModelAdmin):
         if request.user.is_superuser:
             return True
         return obj is None or obj.user == request.user
+
+    def custom_boss_confirmation(self, obj):
+        # リーダーグループまたはスーパーユーザーの場合は編集可能なチェックボックスを表示
+        if self.request.user.is_superuser or self.request.user.groups.filter(name='リーダー').exists():
+            checked = 'checked' if obj.boss_confirmation else ''
+            return mark_safe(
+                '<input type="hidden" name="_boss_confirmation_{0}" value="0">'
+                '<input type="checkbox" name="boss_confirmation_{0}" value="1" {1} '
+                'onchange="document.getElementById(\'changelist-form\').submit()">'.format(
+                    obj.id, checked
+                )
+            )
+        # それ以外のユーザーの場合は読み取り専用の表示
+        else:
+            return '✓' if obj.boss_confirmation else '✗'
+    custom_boss_confirmation.short_description = '上司確認'
 
     def get_username(self, obj):
         return obj.user.username if obj.user else "未設定"
@@ -137,7 +193,64 @@ class DailyReportAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         if not change:
             obj.user = request.user
+        
+        # リーダーまたは管理者の場合、すべての変更を保存
+        is_superuser = request.user.is_superuser
+        is_leader = request.user.groups.filter(name='リーダー').exists()
+        
+        if not is_superuser and not is_leader and 'comment' in form.changed_data:
+            # リーダー以外がコメントを変更しようとした場合は元の値に戻す
+            logger.warning(f"Non-leader user {request.user.username} attempted to change comment")
+            if obj.pk:
+                original = DailyReport.objects.get(pk=obj.pk)
+                obj.comment = original.comment
+        
         super().save_model(request, obj, form, change)
 
+    # リクエストオブジェクトを保存するためのミドルウェア
+    def changelist_view(self, request, extra_context=None):
+        self.request = request
+        
+        # POSTリクエストの場合、チェックボックスの変更を処理
+        if request.method == 'POST' and (request.user.is_superuser or request.user.groups.filter(name='リーダー').exists()):
+            for key in list(request.POST.keys()):
+                if key.startswith('boss_confirmation_'):
+                    try:
+                        report_id = int(key.split('_')[-1])
+                        report = DailyReport.objects.get(id=report_id)
+                        # チェックされていればTrue、そうでなければFalse
+                        report.boss_confirmation = True
+                        report.save()
+                    except (ValueError, DailyReport.DoesNotExist):
+                        pass
+                        
+                # チェックボックスが外された場合の処理
+                elif key.startswith('_boss_confirmation_'):
+                    try:
+                        report_id = int(key.split('_')[-1])
+                        # 対応するチェックボックスがPOSTデータに存在しない場合はFalseにする
+                        checkbox_key = 'boss_confirmation_' + str(report_id)
+                        if checkbox_key not in request.POST:
+                            report = DailyReport.objects.get(id=report_id)
+                            report.boss_confirmation = False
+                            report.save()
+                    except (ValueError, DailyReport.DoesNotExist):
+                        pass
+        
+        return super().changelist_view(request, extra_context)
+
     list_per_page = 20
-    list_editable = ['boss_confirmation']
+    # list_editable = ['boss_confirmation']  # カスタムフィールドに置き換えたので不要
+
+    def get_readonly_fields(self, request, obj=None):
+        # デバッグ情報
+        is_superuser = request.user.is_superuser
+        is_leader = request.user.groups.filter(name='リーダー').exists()
+        logger.info(f"User: {request.user.username}, Superuser: {is_superuser}, Leader: {is_leader}")
+        
+        readonly = list(self.readonly_fields)
+        # リーダーグループに属していない場合、boss_confirmationとcommentを読み取り専用にする
+        if not is_superuser and not is_leader:
+            readonly.extend(['boss_confirmation', 'comment'])
+            logger.info(f"Setting readonly fields for {request.user.username}: {readonly}")
+        return readonly
