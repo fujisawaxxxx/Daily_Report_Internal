@@ -8,6 +8,7 @@ import logging
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth.models import Group, User
+from django.http import HttpResponseRedirect
 
 logger = logging.getLogger(__name__)
 
@@ -98,16 +99,30 @@ class DailyReportAdmin(admin.ModelAdmin):
     date_hierarchy = 'date'
     ordering = ('-date',)
     inlines = [DailyReportDetailInline]
+    
+    # 「保存してもう1つ追加」と「保存して編集を続ける」ボタンを非表示にする設定
+    save_on_top = False  # 上部の保存ボタンを非表示
+    save_as = False  # 「別名で保存」ボタンを非表示
 
     fieldsets = (
         (None, {
-            'fields': ('date',),
+            'fields': (('date', 'is_submitted', 'boss_confirmation'),),
         }),
         ('確認・報告事項', {
-            'fields': ('is_submitted', 'boss_confirmation', 'remarks', 'comment'),
+            'fields': ('remarks', 'comment'),
             'classes': ('collapse',),
         }),
     )
+    
+    # 「保存してもう1つ追加」ボタンを非表示にするメソッド
+    def response_add(self, request, obj, post_url_continue=None):
+        """「保存してもう1つ追加」ボタンの動作をオーバーライド"""
+        return HttpResponseRedirect('../')
+    
+    # 「保存して編集を続ける」ボタンを非表示にするメソッド
+    def response_change(self, request, obj):
+        """「保存して編集を続ける」ボタンの動作をオーバーライド"""
+        return HttpResponseRedirect('../')
 
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj)
