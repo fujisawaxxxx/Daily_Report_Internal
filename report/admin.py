@@ -102,11 +102,8 @@ class DailyReportAdmin(admin.ModelAdmin):
         (None, {
             'fields': ('date',),
         }),
-        ('コメント', {
-            'fields': ('comment',),
-        }),
         ('確認・報告事項', {
-            'fields': ('boss_confirmation', 'remarks'),
+            'fields': ('boss_confirmation', 'remarks', 'comment'),
             'classes': ('collapse',),
         }),
     )
