@@ -81,18 +81,19 @@ class DailyReportForm(forms.ModelForm):
 
     class Meta:
         model = DailyReport
-        fields = ('date', 'boss_confirmation', 'remarks', 'comment')
+        fields = ('date', 'boss_confirmation', 'remarks', 'comment', 'is_submitted')
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
             'remarks': forms.Textarea(attrs={'rows': 4}),
             'comment': forms.Textarea(attrs={'rows': 4}),
+            'is_submitted': forms.CheckboxInput(attrs={'class': 'submit-checkbox'}),
         }
 
 @admin.register(DailyReport)
 class DailyReportAdmin(admin.ModelAdmin):
     form = DailyReportForm
-    list_display = ('date', 'get_username', 'get_work_titles', 'custom_boss_confirmation')
-    list_filter = ('date', 'user', 'boss_confirmation')
+    list_display = ('date', 'get_username', 'get_work_titles', 'custom_boss_confirmation', 'is_submitted')
+    list_filter = ('date', 'user', 'boss_confirmation', 'is_submitted')
     search_fields = ('user__username', 'details__work_title', 'details__work_detail')
     date_hierarchy = 'date'
     ordering = ('-date',)
@@ -103,7 +104,7 @@ class DailyReportAdmin(admin.ModelAdmin):
             'fields': ('date',),
         }),
         ('確認・報告事項', {
-            'fields': ('boss_confirmation', 'remarks', 'comment'),
+            'fields': ('is_submitted', 'boss_confirmation', 'remarks', 'comment'),
             'classes': ('collapse',),
         }),
     )
@@ -205,10 +206,20 @@ class DailyReportAdmin(admin.ModelAdmin):
                 original = DailyReport.objects.get(pk=obj.pk)
                 obj.comment = original.comment
         
+        # 提出状態の変化を記録
+        is_newly_submitted = False
+        if change and 'is_submitted' in form.changed_data and obj.is_submitted:
+            # 既存の日報が提出された場合
+            is_newly_submitted = True
+        elif not change and obj.is_submitted:
+            # 新規作成時に提出された場合
+            is_newly_submitted = True
+            
         super().save_model(request, obj, form, change)
 
-        # 保存ボタンが押されたらユーザーのメールアドレスに通知メールを送信
-        self.send_notification_email(request.user, obj)
+        # 提出された場合のみメール送信
+        if is_newly_submitted:
+            self.send_notification_email(request.user, obj)
 
     def send_notification_email(self, user, report):
         """日報が保存されたことを通知するメールを送信する"""

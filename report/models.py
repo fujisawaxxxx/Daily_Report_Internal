@@ -8,6 +8,7 @@ class DailyReport(models.Model):
     boss_confirmation = models.BooleanField(verbose_name='上司確認', default=False)
     remarks = models.TextField('報告事項', blank=True, null=True)
     comment = models.TextField('コメント', blank=True, null=True)
+    is_submitted = models.BooleanField('提出', default=False)
     created_at = models.DateTimeField('作成日時', auto_now_add=True)
     updated_at = models.DateTimeField('更新日時', auto_now=True)
     
