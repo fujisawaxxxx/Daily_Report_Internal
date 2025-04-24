@@ -6,7 +6,10 @@ class DailyReport(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='ユーザー', null=True)
     date = models.DateField(verbose_name='日付')
     boss_confirmation = models.BooleanField(verbose_name='上司確認', default=False)
-    remarks = models.TextField('備考', blank=True, null=True)
+    remarks = models.TextField('報告事項', blank=True, null=True)
+    comment = models.TextField('コメント', blank=True, null=True)
+    created_at = models.DateTimeField('作成日時', auto_now_add=True)
+    updated_at = models.DateTimeField('更新日時', auto_now=True)
     
     def __str__(self):
         return f"{self.date} - {self.user.username if self.user else '未設定'}"

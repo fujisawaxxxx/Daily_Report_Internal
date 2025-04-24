@@ -25,7 +25,15 @@
       {% include inline_admin_formset.opts.template %}
     {% endfor %}
 
-    {# 確認・備考 #}
+    {# コメントフィールド #}
+    <fieldset class="module aligned">
+      <h2>コメント</h2>
+      <div class="form-row">
+        <textarea name="comment" rows="4" style="width: 100%;"></textarea>
+      </div>
+    </fieldset>
+
+    {# 確認・報告事項 #}
     <fieldset class="module aligned">
       {% for field in adminform.form.fields_for_model %}
         {% if field.name == 'boss_confirmation' or field.name == 'remarks' %}

@@ -72,7 +72,16 @@ class DailyReportAdmin(admin.ModelAdmin):
     date_hierarchy = 'date'
     ordering = ('-date',)
     inlines = [DailyReportDetailInline]
-    fields = ('date', 'boss_confirmation', 'remarks')
+
+    fieldsets = (
+        (None, {
+            'fields': ('date',),
+        }),
+        ('確認・報告事項', {
+            'fields': ('boss_confirmation', 'remarks', 'comment'),
+            'classes': ('collapse',),
+        }),
+    )
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
