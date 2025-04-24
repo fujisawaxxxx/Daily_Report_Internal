@@ -33,16 +33,29 @@ class DailyReportDetailInline(admin.TabularInline):
         class InitialFormSet(FormSet):
             def __init__(self, *args, **kwargs):
                 if not obj:  # 新規作成時のみ初期値をセット
-                    initial = [
-                        {'start_time': '09:00', 'end_time': '10:00'},
-                        {'start_time': '10:00', 'end_time': '11:00'},
-                        {'start_time': '11:00', 'end_time': '12:00'},
-                        {'start_time': '13:00', 'end_time': '14:00'},
-                        {'start_time': '14:00', 'end_time': '15:00'},
-                        {'start_time': '15:00', 'end_time': '16:00'},
-                        {'start_time': '16:00', 'end_time': '17:00'},
-                        {'start_time': '17:00', 'end_time': '17:30'},
-                    ]
+                    # ユーザーのグループに基づいて初期値を設定
+                    if request.user.groups.filter(name='パターンB').exists():
+                        initial = [
+                            {'start_time': '08:30', 'end_time': '09:00'},
+                            {'start_time': '09:30', 'end_time': '10:30'},
+                            {'start_time': '10:30', 'end_time': '11:30'},
+                            {'start_time': '12:30', 'end_time': '13:30'},
+                            {'start_time': '13:30', 'end_time': '14:30'},
+                            {'start_time': '14:30', 'end_time': '15:30'},
+                            {'start_time': '15:30', 'end_time': '16:30'},
+                            {'start_time': '16:30', 'end_time': '17:00'},
+                        ]
+                    else:  # パターンAまたはその他のユーザー
+                        initial = [
+                            {'start_time': '09:00', 'end_time': '10:00'},
+                            {'start_time': '10:00', 'end_time': '11:00'},
+                            {'start_time': '11:00', 'end_time': '12:00'},
+                            {'start_time': '13:00', 'end_time': '14:00'},
+                            {'start_time': '14:00', 'end_time': '15:00'},
+                            {'start_time': '15:00', 'end_time': '16:00'},
+                            {'start_time': '16:00', 'end_time': '17:00'},
+                            {'start_time': '17:00', 'end_time': '17:30'},
+                        ]
                     kwargs['initial'] = initial
                 super().__init__(*args, **kwargs)
         return InitialFormSet
