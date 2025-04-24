@@ -91,10 +91,14 @@ class DailyReportAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs if request.user.is_superuser else qs.filter(user=request.user)
+        # スーパーユーザーまたはリーダーグループに所属するユーザーは全ての日報を閲覧可能
+        if request.user.is_superuser or request.user.groups.filter(name='リーダー').exists():
+            return qs
+        return qs.filter(user=request.user)
 
     def has_view_permission(self, request, obj=None):
-        if request.user.is_superuser:
+        # スーパーユーザーまたはリーダーグループに所属するユーザーは全ての日報を閲覧可能
+        if request.user.is_superuser or request.user.groups.filter(name='リーダー').exists():
             return True
         return obj is None or obj.user == request.user
 
