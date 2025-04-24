@@ -238,30 +238,30 @@ class DailyReportAdmin(admin.ModelAdmin):
         message += f"\n【上司確認】: {'済' if report.boss_confirmation else '未確認'}"
         
         from_email = settings.EMAIL_HOST_USER
+        
         # 送信先のメールアドレスを設定
         recipient_emails = []
         
+        # ユーザー自身のメールアドレスを使用（最優先）
+        if user.email:
+            recipient_emails.append(user.email)
+            
         # 上司のメールアドレス（リーダーグループのメンバー）を取得
         try:
             leader_group = Group.objects.get(name='リーダー')
             leaders = User.objects.filter(groups=leader_group)
             for leader in leaders:
-                if leader.email:
+                if leader.email and leader.email != user.email:  # ユーザー自身が上司の場合は重複送信しない
                     recipient_emails.append(leader.email)
         except Group.DoesNotExist:
             pass
-            
-        # もしEMAIL_NOTIFICATIONセッティングがあれば、そのメールアドレスも追加
-        if hasattr(settings, 'EMAIL_NOTIFICATION') and settings.EMAIL_NOTIFICATION:
-            recipient_emails.append(settings.EMAIL_NOTIFICATION)
         
-        # 送信先が設定されていなければ、ユーザー自身のメールアドレスを使用
-        if not recipient_emails and user.email:
-            recipient_emails.append(user.email)
+        # EMAIL_NOTIFICATIONの設定は使用しない
         
         if recipient_emails:  # メールアドレスが設定されている場合のみ送信
             try:
                 send_mail(subject, message, from_email, recipient_emails)
+                logger.info(f"メール送信成功: {recipient_emails}")
             except Exception as e:
                 logger.error(f"メール送信エラー: {e}")
 
