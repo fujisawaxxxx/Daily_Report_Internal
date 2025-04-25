@@ -17,10 +17,10 @@ class DailyReportDetailForm(forms.ModelForm):
         model = DailyReportDetail
         fields = '__all__'
         widgets = {
-            'start_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'style': 'width: 100px;'}),
-            'end_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'style': 'width: 100px;'}),
-            'work_title': forms.TextInput(attrs={'style': 'width: 150px;'}),
-            'work_detail': forms.TextInput(attrs={'style': 'width: 200px;'}),
+            'start_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'style': 'width: 80px;'}),
+            'end_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'style': 'width: 80px;'}),
+            'work_title': forms.TextInput(attrs={'style': 'width: 350px;'}),
+            'work_detail': forms.TextInput(attrs={'style': 'width: 700px;'}),
             'remarks': forms.TextInput(attrs={'style': 'width: 200px;'}),
         }
 

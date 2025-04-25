@@ -12,6 +12,14 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+# .env ファイルから環境変数を読み込む
+# エラーが発生しても続行する
+try:
+    load_dotenv()
+except Exception as e:
+    print(f"Warning: Could not load .env file: {e}")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,7 +29,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-hp#ysl@5ma7axbfc!8i_h5!ahl2yr3)6mhk#zs!yk5t*4h#75y'
+# 環境変数が存在しない場合はデフォルト値を使用
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-hp#ysl@5ma7axbfc!8i_h5!ahl2yr3)6mhk#zs!yk5t*4h#75y')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -36,8 +45,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'ag-mails@ag-media.co.jp'
-EMAIL_HOST_PASSWORD = 'wvllexijazsmhbad'  # アプリパスワード
+# 環境変数が存在しない場合はデフォルト値を使用
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'ag-mails@ag-media.co.jp')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'wvllexijazsmhbad')  # アプリパスワード
 # 通知先のメールアドレス（オプション）
 EMAIL_NOTIFICATION = 'leader@example.com'
 
