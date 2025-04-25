@@ -160,21 +160,54 @@ class DailyReportAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        # スーパーユーザーまたはリーダーグループに所属するユーザーは全ての日報を閲覧可能
-        if request.user.is_superuser or request.user.groups.filter(name='リーダー').exists():
+        # スーパーユーザーは全ての日報を閲覧可能
+        if request.user.is_superuser:
             return qs
+        
+        # リーダーグループに所属するユーザーは自分の所属グループのメンバーの日報のみ閲覧可能
+        if request.user.groups.filter(name='リーダー').exists():
+            # ユーザーの所属グループを取得
+            user_groups = request.user.groups.all().exclude(name='リーダー')
+            if user_groups.exists():
+                # 所属グループがある場合は、そのグループのメンバーの日報のみ表示
+                users_in_same_groups = User.objects.filter(groups__in=user_groups).distinct()
+                return qs.filter(user__in=users_in_same_groups)
+            else:
+                # リーダー以外の所属グループがない場合は、自分の日報のみ
+                return qs.filter(user=request.user)
+                
+        # それ以外のユーザーは自分の日報のみ閲覧可能
         return qs.filter(user=request.user)
 
     def has_view_permission(self, request, obj=None):
-        # スーパーユーザーまたはリーダーグループに所属するユーザーは全ての日報を閲覧可能
-        if request.user.is_superuser or request.user.groups.filter(name='リーダー').exists():
+        # スーパーユーザーは全ての日報を閲覧可能
+        if request.user.is_superuser:
             return True
-        return obj is None or obj.user == request.user
+            
+        # objがNoneの場合はリストビュー - get_querysetが適切にフィルタリングするので許可
+        if obj is None:
+            return True
+            
+        # リーダーの場合は所属グループをチェック
+        if request.user.groups.filter(name='リーダー').exists():
+            # 自分の日報は閲覧可能
+            if obj.user == request.user:
+                return True
+                
+            # 自分が所属する非リーダーグループを取得
+            user_groups = request.user.groups.all().exclude(name='リーダー')
+            if not user_groups.exists():
+                return False
+                
+            # 対象ユーザーが自分の所属グループに含まれるかチェック
+            return obj.user.groups.filter(id__in=user_groups).exists()
+            
+        # それ以外のユーザーは自分の日報のみ閲覧可能
+        return obj.user == request.user
 
     def has_change_permission(self, request, obj=None):
-        if request.user.is_superuser or request.user.groups.filter(name='リーダー').exists():
-            return True
-        return obj is None or obj.user == request.user
+        # has_view_permissionと同じロジックを使用
+        return self.has_view_permission(request, obj)
 
     def has_delete_permission(self, request, obj=None):
         if request.user.is_superuser:
@@ -182,8 +215,26 @@ class DailyReportAdmin(admin.ModelAdmin):
         return obj is None or obj.user == request.user
 
     def custom_boss_confirmation(self, obj):
-        # リーダーグループまたはスーパーユーザーの場合は編集可能なチェックボックスを表示
-        if self.request.user.is_superuser or self.request.user.groups.filter(name='リーダー').exists():
+        is_superuser = self.request.user.is_superuser
+        is_leader = self.request.user.groups.filter(name='リーダー').exists()
+        can_edit = False
+        
+        # スーパーユーザーは全ての日報を編集可能
+        if is_superuser:
+            can_edit = True
+        # リーダーの場合、自分のグループのメンバーの日報のみ編集可能
+        elif is_leader:
+            # 自分の日報は編集可能
+            if obj.user == self.request.user:
+                can_edit = True
+            else:
+                # 自分のグループに属するユーザーの日報のみ編集可能
+                user_groups = self.request.user.groups.all().exclude(name='リーダー')
+                if user_groups.exists() and obj.user.groups.filter(id__in=user_groups).exists():
+                    can_edit = True
+        
+        # リーダーまたはスーパーユーザーで編集権限がある場合は編集可能なチェックボックスを表示
+        if can_edit:
             checked = 'checked' if obj.boss_confirmation else ''
             return mark_safe(
                 '<input type="hidden" name="_boss_confirmation_{0}" value="0">'
@@ -329,30 +380,48 @@ class DailyReportAdmin(admin.ModelAdmin):
         self.request = request
         
         # POSTリクエストの場合、チェックボックスの変更を処理
-        if request.method == 'POST' and (request.user.is_superuser or request.user.groups.filter(name='リーダー').exists()):
-            for key in list(request.POST.keys()):
-                if key.startswith('boss_confirmation_'):
-                    try:
-                        report_id = int(key.split('_')[-1])
-                        report = DailyReport.objects.get(id=report_id)
-                        # チェックされていればTrue、そうでなければFalse
-                        report.boss_confirmation = True
-                        report.save()
-                    except (ValueError, DailyReport.DoesNotExist):
-                        pass
-                        
-                # チェックボックスが外された場合の処理
-                elif key.startswith('_boss_confirmation_'):
-                    try:
-                        report_id = int(key.split('_')[-1])
-                        # 対応するチェックボックスがPOSTデータに存在しない場合はFalseにする
-                        checkbox_key = 'boss_confirmation_' + str(report_id)
-                        if checkbox_key not in request.POST:
+        if request.method == 'POST':
+            can_edit = request.user.is_superuser
+            is_leader = request.user.groups.filter(name='リーダー').exists()
+            
+            if is_leader or can_edit:
+                for key in list(request.POST.keys()):
+                    if key.startswith('boss_confirmation_'):
+                        try:
+                            report_id = int(key.split('_')[-1])
                             report = DailyReport.objects.get(id=report_id)
-                            report.boss_confirmation = False
+                            
+                            # リーダーの場合、自分のグループのメンバーの日報のみ編集可能
+                            if is_leader and not can_edit:
+                                user_groups = request.user.groups.all().exclude(name='リーダー')
+                                if not report.user.groups.filter(id__in=user_groups).exists() and report.user != request.user:
+                                    continue  # 自分のグループ外のユーザーの日報は編集不可
+                            
+                            # チェックされていればTrue、そうでなければFalse
+                            report.boss_confirmation = True
                             report.save()
-                    except (ValueError, DailyReport.DoesNotExist):
-                        pass
+                        except (ValueError, DailyReport.DoesNotExist):
+                            pass
+                            
+                    # チェックボックスが外された場合の処理
+                    elif key.startswith('_boss_confirmation_'):
+                        try:
+                            report_id = int(key.split('_')[-1])
+                            # 対応するチェックボックスがPOSTデータに存在しない場合はFalseにする
+                            checkbox_key = 'boss_confirmation_' + str(report_id)
+                            if checkbox_key not in request.POST:
+                                report = DailyReport.objects.get(id=report_id)
+                                
+                                # リーダーの場合、自分のグループのメンバーの日報のみ編集可能
+                                if is_leader and not can_edit:
+                                    user_groups = request.user.groups.all().exclude(name='リーダー')
+                                    if not report.user.groups.filter(id__in=user_groups).exists() and report.user != request.user:
+                                        continue  # 自分のグループ外のユーザーの日報は編集不可
+                                
+                                report.boss_confirmation = False
+                                report.save()
+                        except (ValueError, DailyReport.DoesNotExist):
+                            pass
         
         return super().changelist_view(request, extra_context)
 
