@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django import forms
 from .models import DailyReport, DailyReportDetail
 from django.forms.models import BaseInlineFormSet
@@ -232,19 +232,42 @@ class DailyReportAdmin(admin.ModelAdmin):
             
         super().save_model(request, obj, form, change)
 
-        # 提出された場合のみメール送信
+        # 提出された場合のみメール送信とメッセージ表示
         if is_newly_submitted:
             self.send_notification_email(request.user, obj)
+            messages.success(request, "日報が提出されました")
 
     def send_notification_email(self, user, report):
         """日報が保存されたことを通知するメールを送信する"""
         subject = f"日報保存通知: {user.username} - {report.date}"
         
-        # 作業内容を取得
+        # 作業内容を取得 - より直接的な方法で取得
         work_details = []
-        for detail in report.details.all():
-            if detail.work_title and detail.start_time and detail.end_time:
-                work_details.append(f"{detail.start_time}〜{detail.end_time}: {detail.work_title} - {detail.work_detail or ''}")
+        
+        # 日報に関連する詳細をすべて取得 - より確実な方法で
+        detail_records = DailyReportDetail.objects.filter(report=report)
+        
+        if detail_records.exists():
+            for detail in detail_records:
+                # 各フィールドを個別に処理
+                start_time_str = str(detail.start_time) if detail.start_time else "未記入"
+                end_time_str = str(detail.end_time) if detail.end_time else "未記入"
+                work_title_str = detail.work_title if detail.work_title else "未記入"
+                work_detail_str = detail.work_detail if detail.work_detail else "-"
+                
+                # 必ず情報を追加
+                entry = f"{start_time_str}〜{end_time_str}: {work_title_str} - {work_detail_str}"
+                work_details.append(entry)
+                logger.info(f"メール作業詳細に追加: {entry}")
+        else:
+            # 詳細レコードがない場合
+            work_details.append("作業詳細はありません")
+            logger.info("作業詳細レコードが見つかりませんでした")
+        
+        # デバッグ情報としてログに出力
+        logger.info(f"作業詳細件数: {len(work_details)}")
+        for i, detail in enumerate(work_details):
+            logger.info(f"詳細 {i+1}: {detail}")
         
         # 日報へのURLを作成
         report_url = f":8000/admin/report/dailyreport/{report.id}/change/"
@@ -267,15 +290,11 @@ class DailyReportAdmin(admin.ModelAdmin):
         # 日報へのURLを追加
         message += f"日報の詳細を確認する: {full_url}\n\n"
         
-        message += "【作業内容】\n"
-        message += "\n".join(work_details) if work_details else "記録なし\n"
+        # 報告事項を追加
+        message += f"\n【報告事項】\n{report.remarks or 'なし'}\n"
         
-        message += f"\n【備考】\n{report.remarks or 'なし'}\n"
-        
-        if report.comment:
-            message += f"\n【コメント】\n{report.comment}\n"
-        
-        message += f"\n【上司確認】: {'済' if report.boss_confirmation else '未確認'}"
+        # メール送信用のデバッグログ
+        logger.info(f"作成されたメール本文:\n{message}")
         
         from_email = settings.EMAIL_HOST_USER
         
