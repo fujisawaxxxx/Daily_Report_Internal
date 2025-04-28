@@ -30,12 +30,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # 環境変数が存在しない場合はデフォルト値を使用
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-hp#ysl@5ma7axbfc!8i_h5!ahl2yr3)6mhk#zs!yk5t*4h#75y')
+SECRET_KEY = os.environ.get('SECRET_KEY')
+print(SECRET_KEY)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS =  ['*', '192.168.1.196', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS =  ['*', '192.168.1.196', 'localhost', '127.0.0.1','afujisawa.pythonanywhere.com']
 
 # クロスオリジンセキュリティ設定
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None  # 開発環境ではNoneに設定
@@ -142,6 +143,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "static"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
