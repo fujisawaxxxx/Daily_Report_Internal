@@ -19,7 +19,7 @@ from django.urls import path
 
 # 管理サイトのタイトルとヘッダーを変更
 admin.site.site_header = '日報管理'  # ログインページとヘッダーのタイトル
-admin.site.site_title = '日報管理'  # ブラウザのタブに表示されるタイトル
+admin.site.site_title = 'kintone'  # ブラウザのタブに表示されるタイトル
 admin.site.index_title = '日報メニュー'  # 管理画面のホームページのタイトル
 
 urlpatterns = [
