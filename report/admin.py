@@ -322,7 +322,7 @@ class DailyReportAdmin(admin.ModelAdmin):
             logger.info(f"詳細 {i+1}: {detail}")
         
         # 日報へのURLを作成
-        report_url = f":8000/admin/report/dailyreport/{report.id}/change/"
+        report_url = f"/admin/report/dailyreport/{report.id}/change/"
         # 完全なURLを取得するためのドメイン設定
         domain = None
         
@@ -340,7 +340,12 @@ class DailyReportAdmin(admin.ModelAdmin):
                 if not domain:
                     domain = 'localhost:8000'  # デフォルト値
         
-        full_url = f"http://{domain}{report_url}"
+        # PythonAnywhereでは'https://'を使用
+        if 'pythonanywhere' in domain:
+            full_url = f"https://{domain}{report_url}"
+        else:
+            # ローカル環境ではhttpとポート番号を使用
+            full_url = f"http://{domain}:8000{report_url}" if ':' not in domain else f"http://{domain}{report_url}"
         
         # メール本文を作成
         message = f"{user.username}さんの日報が保存されました。\n"
