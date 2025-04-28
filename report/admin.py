@@ -19,7 +19,7 @@ class DailyReportDetailForm(forms.ModelForm):
         widgets = {
             'start_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'style': 'width: 80px;'}),
             'end_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'style': 'width: 80px;'}),
-            'work_title': forms.TextInput(attrs={'style': 'width: 350px;'}),
+            'work_title': forms.TextInput(attrs={'style': 'width: 500px;'}),
             'work_detail': forms.TextInput(attrs={'style': 'width: 700px;'}),
             'remarks': forms.TextInput(attrs={'style': 'width: 200px;'}),
         }
@@ -27,7 +27,7 @@ class DailyReportDetailForm(forms.ModelForm):
 class DailyReportDetailInline(admin.TabularInline):
     model = DailyReportDetail
     form = DailyReportDetailForm
-    fields = ('start_time', 'end_time', 'work_title', 'work_detail')
+    fields = ('start_time', 'end_time', 'work_title') #'work_detailは非表示'
     verbose_name = "作業詳細"
     verbose_name_plural = "作業詳細（追加するには「＋」ボタンをクリック）"
     show_change_link = False
