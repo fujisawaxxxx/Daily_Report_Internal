@@ -9,6 +9,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.http import HttpResponseRedirect
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -324,13 +325,20 @@ class DailyReportAdmin(admin.ModelAdmin):
         report_url = f":8000/admin/report/dailyreport/{report.id}/change/"
         # 完全なURLを取得するためのドメイン設定
         domain = None
-        if hasattr(settings, 'ALLOWED_HOSTS') and settings.ALLOWED_HOSTS:
-            for host in settings.ALLOWED_HOSTS:
-                if host not in ['*', 'localhost', '127.0.0.1']:
-                    domain = host
-                    break
-            if not domain:
-                domain = 'localhost:8000'  # デフォルト値
+        
+        # .envファイルからURL_SETを取得
+        url_set = os.environ.get('URL_SET')
+        if url_set:
+            domain = url_set
+        else:
+            # 従来の方法でドメインを取得（バックアップ）
+            if hasattr(settings, 'ALLOWED_HOSTS') and settings.ALLOWED_HOSTS:
+                for host in settings.ALLOWED_HOSTS:
+                    if host not in ['*', 'localhost', '127.0.0.1']:
+                        domain = host
+                        break
+                if not domain:
+                    domain = 'localhost:8000'  # デフォルト値
         
         full_url = f"http://{domain}{report_url}"
         
