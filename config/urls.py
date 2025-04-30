@@ -18,9 +18,9 @@ from django.contrib import admin
 from django.urls import path
 
 # 管理サイトのタイトルとヘッダーを変更
-admin.site.site_header = 'あさひ高速印刷'  # ログインページとヘッダーのタイトル
+admin.site.site_header = 'Daily Report'  # ログインページとヘッダーのタイトル
 admin.site.site_title = '日報'  # ブラウザのタブに表示されるタイトル
-admin.site.index_title = 'あさひ高速印刷日報'  # 管理画面のホームページのタイトル
+admin.site.index_title = 'あさひ高速印刷　日報'  # 管理画面のホームページのタイトル
 
 urlpatterns = [
     path('admin/', admin.site.urls),
