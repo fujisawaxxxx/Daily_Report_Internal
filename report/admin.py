@@ -348,7 +348,7 @@ class DailyReportAdmin(admin.ModelAdmin):
             full_url = f"http://{domain}:8000{report_url}" if ':' not in domain else f"http://{domain}{report_url}"
         
         # メール本文を作成
-        message = f"{user.username}さんの日報が保存されました。\n"
+        message = f"{user.username}さんの日報が提出されました。\n"
         message += f"日付: {report.date}\n\n"
         
         # 日報へのURLを追加
