@@ -36,7 +36,7 @@ print(SECRET_KEY)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS =  ['*', '192.168.1.196', 'localhost', '127.0.0.1','afujisawa.pythonanywhere.com']
+ALLOWED_HOSTS =  ['*', '192.168.1.196', 'localhost', '127.0.0.1','asahikosoku.pythonanywhere.com']
 
 # クロスオリジンセキュリティ設定
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None  # 開発環境ではNoneに設定
