@@ -36,7 +36,9 @@ print(SECRET_KEY)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS =  ['*', '192.168.1.196', 'localhost', '127.0.0.1','asahikosoku.pythonanywhere.com']
+# 環境変数からURL_SETを取得し、存在しない場合はデフォルト値を使用
+URL_SET = os.environ.get('URL_SET', 'asahikosoku.pythonanywhere.com')
+ALLOWED_HOSTS = ['192.168.1.196', 'localhost', '127.0.0.1', URL_SET]
 
 # クロスオリジンセキュリティ設定
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None  # 開発環境ではNoneに設定
