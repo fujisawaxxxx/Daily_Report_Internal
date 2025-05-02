@@ -88,13 +88,15 @@ class DailyReportForm(forms.ModelForm):
             'date': forms.DateInput(attrs={'type': 'date'}),
             'remarks': forms.Textarea(attrs={'rows': 4}),
             'comment': forms.Textarea(attrs={'rows': 4}),
-            'is_submitted': forms.CheckboxInput(attrs={'class': 'submit-checkbox'}),
         }
 
 @admin.register(DailyReport)
 class DailyReportAdmin(admin.ModelAdmin):
+
+    change_form_template = "report/change_form.html"
+
     form = DailyReportForm
-    list_display = ('date', 'get_username', 'get_work_titles', 'custom_boss_confirmation', 'is_submitted')
+    list_display = ('date', 'get_username', 'get_work_titles', 'custom_boss_confirmation')
     list_filter = ('date', 'user', 'boss_confirmation', 'is_submitted')
     search_fields = ('user__username', 'details__work_title', 'details__work_detail')
     date_hierarchy = 'date'
@@ -107,7 +109,7 @@ class DailyReportAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': (('date', 'is_submitted', 'boss_confirmation'),),
+            'fields': (('date', 'boss_confirmation'),),
         }),
         ('確認・報告事項', {
             'fields': ('remarks', 'comment'),
@@ -259,35 +261,35 @@ class DailyReportAdmin(admin.ModelAdmin):
     get_work_titles.short_description = '作業内容'
 
     def save_model(self, request, obj, form, change):
+        submitting = '_save_submit' in request.POST
+        drafting   = '_save_draft'  in request.POST
+
+        # is_submitted をボタンで決定
+        obj.is_submitted = submitting
+
+        # コメント改竄ガード（略）
+
+        # 新規ならユーザー紐付け
         if not change:
             obj.user = request.user
-        
-        # リーダーまたは管理者の場合、すべての変更を保存
-        is_superuser = request.user.is_superuser
-        is_leader = request.user.groups.filter(name='リーダー').exists()
-        
-        if not is_superuser and not is_leader and 'comment' in form.changed_data:
-            # リーダー以外がコメントを変更しようとした場合は元の値に戻す
-            logger.warning(f"Non-leader user {request.user.username} attempted to change comment")
-            if obj.pk:
-                original = DailyReport.objects.get(pk=obj.pk)
-                obj.comment = original.comment
-        
-        # 提出状態の変化を記録
-        is_newly_submitted = False
-        if change and 'is_submitted' in form.changed_data and obj.is_submitted:
-            # 既存の日報が提出された場合
-            is_newly_submitted = True
-        elif not change and obj.is_submitted:
-            # 新規作成時に提出された場合
-            is_newly_submitted = True
-            
+
+        # --- ここで “提出前の状態” を取得しておく -------------
+        already_submitted = False
+        if change and obj.pk:
+            already_submitted = DailyReport.objects.filter(pk=obj.pk, is_submitted=True).exists()
+
+        # まず保存
         super().save_model(request, obj, form, change)
 
-        # 提出された場合のみメール送信とメッセージ表示
-        if is_newly_submitted:
+        # ボタンに応じてメール & メッセージ
+        if submitting and not already_submitted:        # ★提出済みなら送らない
             self.send_notification_email(request.user, obj)
             messages.success(request, "日報が提出されました")
+        elif submitting and already_submitted:
+            messages.info(request, "すでに提出済みの日報です（メールは再送しません）")
+        else:
+            messages.info(request, "下書きを保存しました")
+
 
     def send_notification_email(self, user, report):
         """日報が保存されたことを通知するメールを送信する"""

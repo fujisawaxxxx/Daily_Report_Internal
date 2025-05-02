@@ -1,0 +1,35 @@
+{# templates/admin/report/dailyreport/change_form.html #}
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+
+{# ─────────────────────────────────────────────
+   上部（フォームのすぐ上）の保存ボタンは不要なので空にする
+───────────────────────────────────────────── #}
+{% block submit_buttons_top %}{% endblock %}
+
+{# ─────────────────────────────────────────────
+   下部の保存ボタン列を「提出して保存」「下書き保存」だけに差し替え
+───────────────────────────────────────────── #}
+{% block submit_buttons_bottom %}
+<div class="submit-row">
+
+  {# ▼ 下書き保存（is_submitted=False） #}
+  <input type="submit"
+         name="_save_draft"
+         value="{% trans '保存' %}"
+         class="default" />
+
+  {# ▼ 提出して保存（is_submitted=True） #}
+  <input type="submit"
+         name="_save_submit"
+         value="{% trans '提出' %}" />
+
+  {# 削除リンクはそのまま残す #}
+  {% if has_delete_permission and not is_popup %}
+    <p class="deletelink-box">
+        <a href="{{ delete_url }}" class="deletelink">{% trans "Delete" %}</a>
+    </p>
+  {% endif %}
+
+</div>
+{% endblock %}
