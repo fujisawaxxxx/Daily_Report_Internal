@@ -93,8 +93,11 @@ class DailyReportForm(forms.ModelForm):
 
 @admin.register(DailyReport)
 class DailyReportAdmin(admin.ModelAdmin):
+
+    change_form_template = "report/change_form.html"
+
     form = DailyReportForm
-    list_display = ('date', 'get_username', 'get_work_titles', 'custom_boss_confirmation', 'is_submitted')
+    list_display = ('date', 'get_username', 'get_work_titles', 'custom_boss_confirmation')
     list_filter = ('date', 'user', 'boss_confirmation', 'is_submitted')
     search_fields = ('user__username', 'details__work_title', 'details__work_detail')
     date_hierarchy = 'date'
@@ -107,7 +110,7 @@ class DailyReportAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': (('date', 'is_submitted', 'boss_confirmation'),),
+            'fields': (('date', 'boss_confirmation'),),
         }),
         ('確認・報告事項', {
             'fields': ('remarks', 'comment'),
@@ -259,6 +262,13 @@ class DailyReportAdmin(admin.ModelAdmin):
     get_work_titles.short_description = '作業内容'
 
     def save_model(self, request, obj, form, change):
+        # どのボタンが押されたかを判定
+        submitting = '_save_submit' in request.POST     # 提出して保存
+        drafting   = '_save_draft'  in request.POST     # 下書き保存
+
+        # ボタンに応じて is_submitted を自動設定
+        obj.is_submitted = submitting
+        
         if not change:
             obj.user = request.user
         
