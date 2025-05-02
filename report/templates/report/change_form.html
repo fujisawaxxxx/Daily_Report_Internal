@@ -16,13 +16,13 @@
   {# ▼ 下書き保存（is_submitted=False） #}
   <input type="submit"
          name="_save_draft"
-         value="{% trans '下書き保存' %}"
+         value="{% trans '保存' %}"
          class="default" />
 
   {# ▼ 提出して保存（is_submitted=True） #}
   <input type="submit"
          name="_save_submit"
-         value="{% trans '提出して保存' %}" />
+         value="{% trans '提出' %}" />
 
   {# 削除リンクはそのまま残す #}
   {% if has_delete_permission and not is_popup %}
