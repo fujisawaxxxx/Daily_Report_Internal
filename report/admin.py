@@ -93,7 +93,7 @@ class DailyReportForm(forms.ModelForm):
 @admin.register(DailyReport)
 class DailyReportAdmin(admin.ModelAdmin):
 
-    change_form_template = "report/change_form.html"
+    change_form_template = "admin/report/change_form.html"
 
     form = DailyReportForm
     list_display = ('date', 'get_username', 'get_work_titles', 'custom_boss_confirmation')
@@ -273,7 +273,7 @@ class DailyReportAdmin(admin.ModelAdmin):
         if not change:
             obj.user = request.user
 
-        # --- ここで “提出前の状態” を取得しておく -------------
+        # --- ここで "提出前の状態" を取得しておく -------------
         already_submitted = False
         if change and obj.pk:
             already_submitted = DailyReport.objects.filter(pk=obj.pk, is_submitted=True).exists()
