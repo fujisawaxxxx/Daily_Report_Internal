@@ -93,7 +93,7 @@ class DailyReportForm(forms.ModelForm):
 @admin.register(DailyReport)
 class DailyReportAdmin(admin.ModelAdmin):
 
-    change_form_template = "admin/report/change_form.html"
+    change_form_template = "report/change_form.html"
 
     form = DailyReportForm
     list_display = ('date', 'get_username', 'get_work_titles', 'custom_boss_confirmation')

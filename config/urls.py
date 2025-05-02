@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path
 
 # 管理サイトのタイトルとヘッダーを変更
-admin.site.site_header = 'あさひ高速印刷　日報'  # ログインページとヘッダーのタイトル
+admin.site.site_header = 'あさひ高速印刷株式会社日報'  # ログインページとヘッダーのタイトル
 admin.site.site_title = ''  # ブラウザのタブに表示されるタイトル
 admin.site.index_title = 'Daily Report'  # 管理画面のホームページのタイトル
 
