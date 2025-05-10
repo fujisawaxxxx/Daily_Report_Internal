@@ -10,8 +10,12 @@ from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.http import HttpResponseRedirect
 import os
+from django.urls import reverse
 
 logger = logging.getLogger(__name__)
+
+# 管理画面のメニューにエクスポートページへのリンクを追加
+admin.site.index_template = 'admin/custom_index.html'
 
 class DailyReportDetailForm(forms.ModelForm):
     class Meta:

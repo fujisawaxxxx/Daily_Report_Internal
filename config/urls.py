@@ -16,12 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from report.views import export_csv, export_view
+from django.shortcuts import redirect
 
 # 管理サイトのタイトルとヘッダーを変更
 admin.site.site_header = 'あさひ高速印刷株式会社日報'  # ログインページとヘッダーのタイトル
 admin.site.site_title = ''  # ブラウザのタブに表示されるタイトル
 admin.site.index_title = 'Daily Report'  # 管理画面のホームページのタイトル
 
+def redirect_to_admin(request):
+    return redirect('admin:index')
+
 urlpatterns = [
+    path('', redirect_to_admin),  # ルートURLを管理画面にリダイレクト
     path('admin/', admin.site.urls),
+    path('export/', export_view, name='export_view'),
+    path('export/csv/', export_csv, name='export_csv'),
 ]
