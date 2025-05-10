@@ -21,14 +21,22 @@ class DailyReportDetailForm(forms.ModelForm):
             'start_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'style': 'width: 80px;'}),
             'end_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'style': 'width: 80px;'}),
             'work_title': forms.TextInput(attrs={'style': 'width: 500px;'}),
+            'responsible_person': forms.Select(attrs={'style': 'width: 150px;'}),
             'work_detail': forms.TextInput(attrs={'style': 'width: 700px;'}),
             'remarks': forms.TextInput(attrs={'style': 'width: 200px;'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # ユーザー一覧を取得して担当者のプルダウンリストを作成
+        users = User.objects.all().order_by('username')
+        user_choices = [('', '---------')] + [(user.username, user.username) for user in users]
+        self.fields['responsible_person'].widget = forms.Select(choices=user_choices, attrs={'style': 'width: 150px;'})
 
 class DailyReportDetailInline(admin.TabularInline):
     model = DailyReportDetail
     form = DailyReportDetailForm
-    fields = ('start_time', 'end_time', 'work_title') #'work_detailは非表示'
+    fields = ('start_time', 'end_time', 'work_title', 'responsible_person') #'work_detailは非表示'
     verbose_name = "作業詳細"
     verbose_name_plural = "作業詳細（追加するには「＋」ボタンをクリック）"
     show_change_link = False
@@ -307,10 +315,11 @@ class DailyReportAdmin(admin.ModelAdmin):
                 start_time_str = str(detail.start_time) if detail.start_time else "未記入"
                 end_time_str = str(detail.end_time) if detail.end_time else "未記入"
                 work_title_str = detail.work_title if detail.work_title else "未記入"
+                responsible_person_str = detail.responsible_person if detail.responsible_person else "-"
                 work_detail_str = detail.work_detail if detail.work_detail else "-"
                 
                 # 必ず情報を追加
-                entry = f"{start_time_str}〜{end_time_str}: {work_title_str} - {work_detail_str}"
+                entry = f"{start_time_str}〜{end_time_str}: {work_title_str} (担当: {responsible_person_str}) - {work_detail_str}"
                 work_details.append(entry)
                 logger.info(f"メール作業詳細に追加: {entry}")
         else:

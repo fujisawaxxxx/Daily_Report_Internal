@@ -25,6 +25,7 @@ class DailyReportDetail(models.Model):
     start_time = models.TimeField(verbose_name='開始時間')
     end_time = models.TimeField(verbose_name='終了時間')
     work_title = models.CharField('作業内容', max_length=200, blank=True, null=True)
+    responsible_person = models.CharField('担当者', max_length=100, blank=True, null=True)
     work_detail = models.TextField('作業詳細', blank=True, null=True)
     
     def __str__(self):
