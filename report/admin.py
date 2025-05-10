@@ -15,7 +15,7 @@ from django.urls import reverse
 logger = logging.getLogger(__name__)
 
 # 管理画面のメニューにエクスポートページへのリンクを追加
-admin.site.index_template = 'admin/custom_index.html'
+# admin.site.index_template = 'admin/custom_index.html'
 
 class DailyReportDetailForm(forms.ModelForm):
     class Meta:
