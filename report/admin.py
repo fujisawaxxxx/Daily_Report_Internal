@@ -1,6 +1,6 @@
 from django.contrib import admin, messages
 from django import forms
-from .models import DailyReport, DailyReportDetail
+from .models import DailyReport, DailyReportDetail, UserProfile
 from django.forms.models import BaseInlineFormSet
 from django.utils import timezone
 from django.utils.safestring import mark_safe
@@ -384,6 +384,14 @@ class DailyReportAdmin(admin.ModelAdmin):
         # ユーザー自身のメールアドレスを使用（最優先）
         if user.email:
             recipient_emails.append(user.email)
+        
+        # ユーザーの追加メールアドレスを取得
+        try:
+            user_profile = UserProfile.objects.get(user=user)
+            if user_profile.additional_email:
+                recipient_emails.append(user_profile.additional_email)
+        except UserProfile.DoesNotExist:
+            pass
             
         # 上司のメールアドレス（リーダーグループのメンバー）を取得
         try:
@@ -392,6 +400,13 @@ class DailyReportAdmin(admin.ModelAdmin):
             for leader in leaders:
                 if leader.email and leader.email != user.email:  # ユーザー自身が上司の場合は重複送信しない
                     recipient_emails.append(leader.email)
+                # リーダーの追加メールアドレスも取得
+                try:
+                    leader_profile = UserProfile.objects.get(user=leader)
+                    if leader_profile.additional_email and leader_profile.additional_email not in recipient_emails:
+                        recipient_emails.append(leader_profile.additional_email)
+                except UserProfile.DoesNotExist:
+                    pass
         except Group.DoesNotExist:
             pass
         
@@ -469,3 +484,16 @@ class DailyReportAdmin(admin.ModelAdmin):
             readonly.extend(['boss_confirmation', 'comment'])
             logger.info(f"Setting readonly fields for {request.user.username}: {readonly}")
         return readonly
+
+# UserProfileの管理画面設定
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'additional_email')
+    search_fields = ('user__username', 'additional_email')
+    
+    def get_queryset(self, request):
+        # スーパーユーザーは全てのプロファイルを閲覧可能
+        if request.user.is_superuser:
+            return super().get_queryset(request)
+        # それ以外のユーザーは自分のプロファイルのみ
+        return super().get_queryset(request).filter(user=request.user)

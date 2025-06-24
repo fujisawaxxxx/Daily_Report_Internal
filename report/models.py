@@ -36,3 +36,14 @@ class DailyReportDetail(models.Model):
         verbose_name = '作業詳細'
         verbose_name_plural = '作業詳細'
         ordering = ['start_time']
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name='ユーザー')
+    additional_email = models.EmailField('追加メールアドレス', blank=True, null=True, help_text='日報通知用の追加メールアドレス')
+    
+    def __str__(self):
+        return f"{self.user.username}のプロファイル"
+    
+    class Meta:
+        verbose_name = 'ユーザープロファイル'
+        verbose_name_plural = 'ユーザープロファイル'

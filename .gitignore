@@ -1,2 +1,16 @@
-.venv
+# SQLiteデータベース
+db.sqlite3
+
+# キャッシュ
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 仮想環境
+.venv/
+venv/
+env/
+
+# 環境設定
 .env
