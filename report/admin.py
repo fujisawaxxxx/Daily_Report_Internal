@@ -226,9 +226,7 @@ class DailyReportAdmin(admin.ModelAdmin):
         return self.has_view_permission(request, obj)
 
     def has_delete_permission(self, request, obj=None):
-        if request.user.is_superuser:
-            return True
-        return obj is None or obj.user == request.user
+        return False
 
     def custom_boss_confirmation(self, obj):
         is_superuser = self.request.user.is_superuser
