@@ -55,7 +55,7 @@ class DailyReportDetailInline(admin.TabularInline):
                     # ユーザーのグループに基づいて初期値を設定
                     if request.user.groups.filter(name='パターンB').exists():
                         initial = [
-                            {'start_time': '08:30', 'end_time': '09:00'},
+                            {'start_time': '08:30', 'end_time': '09:30'},
                             {'start_time': '09:30', 'end_time': '10:30'},
                             {'start_time': '10:30', 'end_time': '11:30'},
                             {'start_time': '12:30', 'end_time': '13:30'},
@@ -223,9 +223,14 @@ class DailyReportAdmin(admin.ModelAdmin):
         return self.has_view_permission(request, obj)
 
     def has_delete_permission(self, request, obj=None):
+        # スーパーユーザーは削除可能
         if request.user.is_superuser:
             return True
-        return obj is None or obj.user == request.user
+        # リーダーグループのみ削除可能
+        if request.user.groups.filter(name='リーダー').exists():
+            return True
+        # それ以外のユーザーは削除不可
+        return False
 
     def custom_boss_confirmation(self, obj):
         is_superuser = self.request.user.is_superuser
