@@ -21,7 +21,7 @@ def export_csv(request):
     
     # ヘッダーの書き込み
     writer.writerow([
-        '日付', 'ユーザー', '開始時間', '終了時間', '作業内容', '得意先', '担当者', '作業詳細', 
+        '日付', 'ユーザー', '開始時間', '終了時間', '作業内容', '得意先', '担当者', 
         '報告事項', 'コメント', '上司確認', '提出状態'
     ])
     
@@ -41,7 +41,6 @@ def export_csv(request):
                     detail.work_title or '',
                     detail.client or '',
                     detail.responsible_person or '',
-                    detail.work_detail or '',
                     report.remarks or '',
                     report.comment or '',
                     '確認済' if report.boss_confirmation else '未確認',
@@ -52,7 +51,7 @@ def export_csv(request):
             writer.writerow([
                 report.date,
                 report.user.username if report.user else '',
-                '', '', '', '', '', '',
+                '', '', '', '', '',
                 report.remarks or '',
                 report.comment or '',
                 '確認済' if report.boss_confirmation else '未確認',
@@ -78,7 +77,7 @@ def import_csv(request):
             
             with transaction.atomic():
                 for row in csv_data:
-                    if len(row) >= 12:  # 必要な列数をチェック
+                    if len(row) >= 11:  # 必要な列数をチェック（11列に変更）
                         date_str = row[0]
                         username = row[1]
                         start_time = row[2] if row[2] else None
@@ -86,11 +85,10 @@ def import_csv(request):
                         work_title = row[4] or ''
                         client = row[5] or ''
                         responsible_person = row[6] or ''
-                        work_detail = row[7] or ''
-                        remarks = row[8] or ''
-                        comment = row[9] or ''
-                        boss_confirmation = row[10] == '確認済'
-                        is_submitted = row[11] == '提出済'
+                        remarks = row[7] or ''
+                        comment = row[8] or ''
+                        boss_confirmation = row[9] == '確認済'
+                        is_submitted = row[10] == '提出済'
                         
                         # ユーザーを取得
                         try:
@@ -119,7 +117,6 @@ def import_csv(request):
                                 work_title=work_title,
                                 client=client,
                                 responsible_person=responsible_person,
-                                work_detail=work_detail,
                             )
                         
                         imported_count += 1

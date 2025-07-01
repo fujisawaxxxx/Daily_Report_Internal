@@ -27,7 +27,6 @@ class DailyReportDetail(models.Model):
     work_title = models.CharField('作業内容', max_length=200, blank=True, null=True)
     client = models.CharField('得意先', max_length=70, blank=True, null=True)
     responsible_person = models.CharField('担当者', max_length=100, blank=True, null=True)
-    work_detail = models.TextField('作業詳細', blank=True, null=True)
     
     def __str__(self):
         return ''  # 空文字列を返すように変更

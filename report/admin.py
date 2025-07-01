@@ -41,7 +41,7 @@ class DailyReportDetailForm(forms.ModelForm):
 class DailyReportDetailInline(admin.TabularInline):
     model = DailyReportDetail
     form = DailyReportDetailForm
-    fields = ('start_time', 'end_time', 'work_title', 'client', 'responsible_person', 'work_detail')
+    fields = ('start_time', 'end_time', 'work_title', 'client', 'responsible_person')
     verbose_name = "作業詳細"
     verbose_name_plural = "作業詳細（追加するには「＋」ボタンをクリック）"
     show_change_link = False
