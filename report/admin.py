@@ -127,7 +127,7 @@ class DailyReportAdmin(admin.ModelAdmin):
     change_form_template = "report/change_form.html"
 
     form = DailyReportForm
-    list_display = ('date', 'user', 'boss_confirmation', 'is_submitted', 'created_at', 'updated_at')
+    list_display = ('date', 'user', 'boss_confirmation', 'is_submitted', 'comment')
     list_filter = ('boss_confirmation', 'is_submitted', 'date', 'user')
     search_fields = ('user__username', 'remarks')
     date_hierarchy = 'date'
