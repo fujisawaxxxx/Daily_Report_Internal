@@ -11,6 +11,9 @@ from django.contrib.auth.models import Group, User
 from django.http import HttpResponseRedirect
 import os
 from django.urls import reverse
+from django.urls import path
+from django.utils.html import format_html
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 logger = logging.getLogger(__name__)
 
@@ -38,11 +41,12 @@ class DailyReportDetailForm(forms.ModelForm):
 class DailyReportDetailInline(admin.TabularInline):
     model = DailyReportDetail
     form = DailyReportDetailForm
-    fields = ('start_time', 'end_time', 'work_title', 'client', 'responsible_person') #'work_detailは非表示'
+    fields = ('start_time', 'end_time', 'work_title', 'client', 'responsible_person', 'work_detail')
     verbose_name = "作業詳細"
     verbose_name_plural = "作業詳細（追加するには「＋」ボタンをクリック）"
     show_change_link = False
-    extra = 1  # 常に1行の空行を表示
+    extra = 0
+    can_delete = False  # 削除チェックボックスを非表示にする
 
     def get_extra(self, request, obj=None, **kwargs):
         if obj:
@@ -123,9 +127,9 @@ class DailyReportAdmin(admin.ModelAdmin):
     change_form_template = "report/change_form.html"
 
     form = DailyReportForm
-    list_display = ('date', 'get_username', 'get_work_titles', 'custom_boss_confirmation')
-    list_filter = ('date', 'user', 'boss_confirmation', 'is_submitted')
-    search_fields = ('user__username', 'details__work_title', 'details__work_detail')
+    list_display = ('date', 'user', 'boss_confirmation', 'is_submitted', 'created_at', 'updated_at')
+    list_filter = ('boss_confirmation', 'is_submitted', 'date', 'user')
+    search_fields = ('user__username', 'remarks')
     date_hierarchy = 'date'
     ordering = ('-date',)
     inlines = [DailyReportDetailInline]
@@ -240,15 +244,11 @@ class DailyReportAdmin(admin.ModelAdmin):
         return self.has_view_permission(request, obj)
 
     def has_delete_permission(self, request, obj=None):
-
-        # スーパーユーザーは削除可能
+        # スーパーユーザーまたはリーダーグループのみ削除可能
         if request.user.is_superuser:
             return True
-        # リーダーグループのみ削除可能
         if request.user.groups.filter(name='リーダー').exists():
             return True
-        # それ以外のユーザーは削除不可
-
         return False
 
     def custom_boss_confirmation(self, obj):
@@ -323,7 +323,6 @@ class DailyReportAdmin(admin.ModelAdmin):
             messages.info(request, "すでに提出済みの日報です（メールは再送しません）")
         else:
             messages.info(request, "下書きを保存しました")
-
 
     def send_notification_email(self, user, report):
         """日報が保存されたことを通知するメールを送信する"""
@@ -488,7 +487,9 @@ class DailyReportAdmin(admin.ModelAdmin):
                         except (ValueError, DailyReport.DoesNotExist):
                             pass
         
-        return super().changelist_view(request, extra_context)
+        extra_context = extra_context or {}
+        extra_context['import_csv_url'] = reverse('admin:import_csv')
+        return super().changelist_view(request, extra_context=extra_context)
 
     list_per_page = 20
     # list_editable = ['boss_confirmation']  # カスタムフィールドに置き換えたので不要
@@ -506,6 +507,16 @@ class DailyReportAdmin(admin.ModelAdmin):
             logger.info(f"Setting readonly fields for {request.user.username}: {readonly}")
         return readonly
 
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('import-csv/', self.admin_site.admin_view(self.import_csv_view), name='import_csv'),
+        ]
+        return custom_urls + urls
+    
+    def import_csv_view(self, request):
+        return HttpResponseRedirect('/import/csv/')
+
 # UserProfileの管理画面設定
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
@@ -518,3 +529,23 @@ class UserProfileAdmin(admin.ModelAdmin):
             return super().get_queryset(request)
         # それ以外のユーザーは自分のプロファイルのみ
         return super().get_queryset(request).filter(user=request.user)
+
+# UserProfileのインライン設定
+class UserProfileInline(admin.StackedInline):
+    model = UserProfile
+    can_delete = False
+    verbose_name_plural = 'プロフィール'
+
+# UserAdminを拡張
+class UserAdmin(BaseUserAdmin):
+    inlines = (UserProfileInline,)
+
+# 既存のUserAdminを削除して新しいものを登録
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
+
+@admin.register(DailyReportDetail)
+class DailyReportDetailAdmin(admin.ModelAdmin):
+    list_display = ('report', 'start_time', 'end_time', 'work_title', 'client', 'responsible_person')
+    list_filter = ('report__date', 'report__user')
+    search_fields = ('work_title', 'client', 'responsible_person', 'work_detail')

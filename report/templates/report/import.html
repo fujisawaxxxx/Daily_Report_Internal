@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>日報データインポート</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="file"] { width: 100%; padding: 8px; border: 1px solid #ddd; }
+        button { background-color: #007cba; color: white; padding: 10px 20px; border: none; cursor: pointer; }
+        button:hover { background-color: #005a87; }
+        .messages { margin-bottom: 20px; }
+        .success { color: green; background-color: #d4edda; padding: 10px; border-radius: 4px; }
+        .error { color: red; background-color: #f8d7da; padding: 10px; border-radius: 4px; }
+        .info { background-color: #d1ecf1; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>日報データインポート</h1>
+        
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}error{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <div class="info">
+            <strong>注意事項：</strong>
+            <ul>
+                <li>CSVファイルは文字コードがCP932（Shift_JIS）である必要があります</li>
+                <li>ヘッダー行は自動的にスキップされます</li>
+                <li>既存のデータと重複する場合は上書きされます</li>
+                <li>ユーザー名が存在しない場合はスキップされます</li>
+            </ul>
+        </div>
+        
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="csv_file">CSVファイルを選択:</label>
+                <input type="file" name="csv_file" id="csv_file" accept=".csv" required>
+            </div>
+            <button type="submit">インポート実行</button>
+        </form>
+        
+        <p><a href="{% url 'admin:index' %}">管理画面に戻る</a></p>
+    </div>
+</body>
+</html> 
