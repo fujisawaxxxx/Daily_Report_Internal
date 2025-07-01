@@ -45,7 +45,11 @@ class DailyReportDetailInline(admin.TabularInline):
     extra = 1  # 常に1行の空行を表示
 
     def get_extra(self, request, obj=None, **kwargs):
-        return 0 if obj else 8
+        if obj:
+            return 0
+        if request.user.groups.filter(name='パターンD').exists():
+            return 0
+        return 8
 
     def get_formset(self, request, obj=None, **kwargs):
         FormSet = super().get_formset(request, obj, **kwargs)
@@ -53,7 +57,20 @@ class DailyReportDetailInline(admin.TabularInline):
             def __init__(self, *args, **kwargs):
                 if not obj:  # 新規作成時のみ初期値をセット
                     # ユーザーのグループに基づいて初期値を設定
-                    if request.user.groups.filter(name='パターンB').exists():
+                    if request.user.groups.filter(name='パターンD').exists():
+                        initial = []
+                    elif request.user.groups.filter(name='パターンC').exists():
+                        initial = [
+                            {'start_time': '--:--', 'end_time': '--:--'},
+                            {'start_time': '--:--', 'end_time': '--:--'},
+                            {'start_time': '--:--', 'end_time': '--:--'},
+                            {'start_time': '--:--', 'end_time': '--:--'},
+                            {'start_time': '--:--', 'end_time': '--:--'},
+                            {'start_time': '--:--', 'end_time': '--:--'},
+                            {'start_time': '--:--', 'end_time': '--:--'},
+                            {'start_time': '--:--', 'end_time': '--:--'},
+                        ]
+                    elif request.user.groups.filter(name='パターンB').exists():
                         initial = [
                             {'start_time': '08:30', 'end_time': '09:30'},
                             {'start_time': '09:30', 'end_time': '10:30'},
@@ -223,6 +240,7 @@ class DailyReportAdmin(admin.ModelAdmin):
         return self.has_view_permission(request, obj)
 
     def has_delete_permission(self, request, obj=None):
+<<<<<<< HEAD
         # スーパーユーザーは削除可能
         if request.user.is_superuser:
             return True
@@ -230,6 +248,8 @@ class DailyReportAdmin(admin.ModelAdmin):
         if request.user.groups.filter(name='リーダー').exists():
             return True
         # それ以外のユーザーは削除不可
+=======
+>>>>>>> 6e77862cf46e07080d97ae2a14526b1553548e81
         return False
 
     def custom_boss_confirmation(self, obj):
