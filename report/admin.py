@@ -53,7 +53,7 @@ class DailyReportDetailInline(admin.TabularInline):
             return 0
         if request.user.groups.filter(name='パターンD').exists():
             return 0
-        return 8
+        return 7
 
     def get_formset(self, request, obj=None, **kwargs):
         FormSet = super().get_formset(request, obj, **kwargs)
@@ -72,7 +72,6 @@ class DailyReportDetailInline(admin.TabularInline):
                             {'start_time': '--:--', 'end_time': '--:--'},
                             {'start_time': '--:--', 'end_time': '--:--'},
                             {'start_time': '--:--', 'end_time': '--:--'},
-                            {'start_time': '--:--', 'end_time': '--:--'},
                         ]
                     elif request.user.groups.filter(name='パターンB').exists():
                         initial = [
@@ -82,8 +81,7 @@ class DailyReportDetailInline(admin.TabularInline):
                             {'start_time': '12:30', 'end_time': '13:30'},
                             {'start_time': '13:30', 'end_time': '14:30'},
                             {'start_time': '14:30', 'end_time': '15:30'},
-                            {'start_time': '15:30', 'end_time': '16:30'},
-                            {'start_time': '16:30', 'end_time': '17:00'},
+                            {'start_time': '15:30', 'end_time': '17:00'},
                         ]
                     else:  # パターンAまたはその他のユーザー
                         initial = [
@@ -93,8 +91,7 @@ class DailyReportDetailInline(admin.TabularInline):
                             {'start_time': '13:00', 'end_time': '14:00'},
                             {'start_time': '14:00', 'end_time': '15:00'},
                             {'start_time': '15:00', 'end_time': '16:00'},
-                            {'start_time': '16:00', 'end_time': '17:00'},
-                            {'start_time': '17:00', 'end_time': '17:30'},
+                            {'start_time': '16:00', 'end_time': '17:30'},
                         ]
                     kwargs['initial'] = initial
                 super().__init__(*args, **kwargs)
