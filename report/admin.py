@@ -341,10 +341,9 @@ class DailyReportAdmin(admin.ModelAdmin):
                 end_time_str = str(detail.end_time) if detail.end_time else "未記入"
                 work_title_str = detail.work_title if detail.work_title else "未記入"
                 responsible_person_str = detail.responsible_person if detail.responsible_person else "-"
-                work_detail_str = detail.work_detail if detail.work_detail else "-"
                 
                 # 必ず情報を追加
-                entry = f"{start_time_str}〜{end_time_str}: {work_title_str} (担当: {responsible_person_str}) - {work_detail_str}"
+                entry = f"{start_time_str}〜{end_time_str}: {work_title_str} (担当: {responsible_person_str})"
                 work_details.append(entry)
                 logger.info(f"メール作業詳細に追加: {entry}")
         else:
@@ -543,9 +542,3 @@ class UserAdmin(BaseUserAdmin):
 # 既存のUserAdminを削除して新しいものを登録
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
-
-@admin.register(DailyReportDetail)
-class DailyReportDetailAdmin(admin.ModelAdmin):
-    list_display = ('report', 'start_time', 'end_time', 'work_title', 'client', 'responsible_person')
-    list_filter = ('report__date', 'report__user')
-    search_fields = ('work_title', 'client', 'responsible_person', 'work_detail')
