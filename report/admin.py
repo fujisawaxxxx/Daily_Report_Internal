@@ -298,8 +298,10 @@ class DailyReportAdmin(admin.ModelAdmin):
         submitting = '_save_submit' in request.POST
         drafting   = '_save_draft'  in request.POST
 
-        # is_submitted をボタンで決定
-        obj.is_submitted = submitting
+        # is_submitted をボタンで決定（提出ボタンが押された場合のみ変更）
+        if submitting:
+            obj.is_submitted = True
+        # 通常の保存の場合は、既存の提出状態を保持（変更しない）
 
         # コメント改竄ガード（略）
 
