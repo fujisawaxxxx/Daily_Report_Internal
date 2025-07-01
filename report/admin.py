@@ -240,7 +240,7 @@ class DailyReportAdmin(admin.ModelAdmin):
         return self.has_view_permission(request, obj)
 
     def has_delete_permission(self, request, obj=None):
-<<<<<<< HEAD
+
         # スーパーユーザーは削除可能
         if request.user.is_superuser:
             return True
@@ -248,8 +248,7 @@ class DailyReportAdmin(admin.ModelAdmin):
         if request.user.groups.filter(name='リーダー').exists():
             return True
         # それ以外のユーザーは削除不可
-=======
->>>>>>> 6e77862cf46e07080d97ae2a14526b1553548e81
+
         return False
 
     def custom_boss_confirmation(self, obj):
