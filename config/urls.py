@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from report.views import export_csv, export_view
 from django.shortcuts import redirect
 
@@ -30,6 +30,7 @@ def redirect_to_admin(request):
 urlpatterns = [
     path('', redirect_to_admin),  # ルートURLを管理画面にリダイレクト
     path('admin/', admin.site.urls),
+    path('accounts/', include('django.contrib.auth.urls')),  # 認証URL追加
     path('export/', export_view, name='export_view'),
     path('export/csv/', export_csv, name='export_csv'),
 ]

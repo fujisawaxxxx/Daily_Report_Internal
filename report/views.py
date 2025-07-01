@@ -3,11 +3,11 @@ from django.http import HttpResponse
 from .models import DailyReport, DailyReportDetail
 import csv
 from datetime import datetime
-from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 
 # Create your views here.
 
-@login_required
+@staff_member_required
 def export_csv(request):
     # レスポンスの設定
     response = HttpResponse(content_type='text/csv; charset=cp932')
@@ -18,7 +18,7 @@ def export_csv(request):
     
     # ヘッダーの書き込み
     writer.writerow([
-        '日付', 'ユーザー', '開始時間', '終了時間', '作業内容', '担当者', '作業詳細', 
+        '日付', 'ユーザー', '開始時間', '終了時間', '作業内容', '得意先', '担当者', '作業詳細', 
         '報告事項', 'コメント', '上司確認', '提出状態'
     ])
     
@@ -36,6 +36,7 @@ def export_csv(request):
                     detail.start_time,
                     detail.end_time,
                     detail.work_title or '',
+                    detail.client or '',
                     detail.responsible_person or '',
                     detail.work_detail or '',
                     report.remarks or '',
@@ -48,7 +49,7 @@ def export_csv(request):
             writer.writerow([
                 report.date,
                 report.user.username if report.user else '',
-                '', '', '', '', '',
+                '', '', '', '', '', '',
                 report.remarks or '',
                 report.comment or '',
                 '確認済' if report.boss_confirmation else '未確認',

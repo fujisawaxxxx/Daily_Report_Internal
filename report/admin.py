@@ -26,17 +26,14 @@ class DailyReportDetailForm(forms.ModelForm):
             'end_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'style': 'width: 80px;'}),
             'work_title': forms.TextInput(attrs={'style': 'width: 500px;'}),
             'client': forms.TextInput(attrs={'style': 'width: 200px;'}),
-            'responsible_person': forms.Select(attrs={'style': 'width: 150px;'}),
+            'responsible_person': forms.TextInput(attrs={'style': 'width: 150px;'}),
             'work_detail': forms.TextInput(attrs={'style': 'width: 700px;'}),
             'remarks': forms.TextInput(attrs={'style': 'width: 200px;'}),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # ユーザー一覧を取得して担当者のプルダウンリストを作成
-        users = User.objects.all().order_by('username')
-        user_choices = [('', '---------')] + [(user.username, user.username) for user in users]
-        self.fields['responsible_person'].widget = forms.Select(choices=user_choices, attrs={'style': 'width: 150px;'})
+        # プルダウン設定を削除（テキスト入力に変更）
 
 class DailyReportDetailInline(admin.TabularInline):
     model = DailyReportDetail
@@ -58,7 +55,7 @@ class DailyReportDetailInline(admin.TabularInline):
                     # ユーザーのグループに基づいて初期値を設定
                     if request.user.groups.filter(name='パターンB').exists():
                         initial = [
-                            {'start_time': '08:30', 'end_time': '09:00'},
+                            {'start_time': '08:30', 'end_time': '09:30'},
                             {'start_time': '09:30', 'end_time': '10:30'},
                             {'start_time': '10:30', 'end_time': '11:30'},
                             {'start_time': '12:30', 'end_time': '13:30'},
@@ -226,9 +223,14 @@ class DailyReportAdmin(admin.ModelAdmin):
         return self.has_view_permission(request, obj)
 
     def has_delete_permission(self, request, obj=None):
+        # スーパーユーザーは削除可能
         if request.user.is_superuser:
             return True
-        return obj is None or obj.user == request.user
+        # リーダーグループのみ削除可能
+        if request.user.groups.filter(name='リーダー').exists():
+            return True
+        # それ以外のユーザーは削除不可
+        return False
 
     def custom_boss_confirmation(self, obj):
         is_superuser = self.request.user.is_superuser
