@@ -1,0 +1,58 @@
+{% extends "admin/index.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .csv-actions {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 15px;
+        margin: 20px 0;
+    }
+    .csv-actions h3 {
+        margin-top: 0;
+        color: #417690;
+    }
+    .csv-button {
+        display: inline-block;
+        padding: 8px 16px;
+        margin: 5px 10px 5px 0;
+        background-color: #417690;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+    .csv-button:hover {
+        background-color: #2b5070;
+        color: white;
+    }
+    .csv-section {
+        margin-bottom: 15px;
+    }
+    .csv-section:last-child {
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{{ block.super }}
+
+<div class="csv-actions">
+    <h3>CSV データ管理</h3>
+    
+    <div class="csv-section">
+        <strong>日報データ:</strong><br>
+        <a href="{% url 'export_view' %}" class="csv-button">エクスポート</a>
+        <a href="{% url 'import_csv' %}" class="csv-button">インポート</a>
+    </div>
+    
+    <div class="csv-section">
+        <strong>ユーザー情報:</strong><br>
+        <a href="{% url 'export_users_csv' %}" class="csv-button">エクスポート</a>
+    </div>
+</div>
+{% endblock %} 

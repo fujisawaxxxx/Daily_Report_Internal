@@ -5,7 +5,7 @@ import csv
 from datetime import datetime
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.db import transaction
 
 # Create your views here.
@@ -130,3 +130,47 @@ def import_csv(request):
 
 def export_view(request):
     return render(request, 'report/export.html')
+
+@staff_member_required
+def export_users_csv(request):
+    """ユーザー情報をCSVでエクスポート"""
+    response = HttpResponse(content_type='text/csv; charset=cp932')
+    response['Content-Disposition'] = f'attachment; filename="users_{datetime.now().strftime("%Y%m%d")}.csv"'
+    
+    writer = csv.writer(response)
+    
+    # ヘッダーの書き込み
+    writer.writerow([
+        'ユーザー名', '姓', '名', 'メールアドレス', 'アクティブ', 'スタッフ権限', 
+        'スーパーユーザー', 'グループ', '追加メールアドレス', '最終ログイン', '登録日'
+    ])
+    
+    # ユーザーデータの取得
+    users = User.objects.all().order_by('username')
+    
+    for user in users:
+        # グループ名を取得
+        groups = ', '.join([group.name for group in user.groups.all()])
+        
+        # UserProfileから追加メールアドレスを取得
+        try:
+            user_profile = UserProfile.objects.get(user=user)
+            additional_emails = user_profile.additional_email or ''
+        except UserProfile.DoesNotExist:
+            additional_emails = ''
+        
+        writer.writerow([
+            user.username,
+            user.last_name,
+            user.first_name,
+            user.email,
+            'アクティブ' if user.is_active else '無効',
+            'あり' if user.is_staff else 'なし',
+            'あり' if user.is_superuser else 'なし',
+            groups,
+            additional_emails,
+            user.last_login.strftime('%Y-%m-%d %H:%M:%S') if user.last_login else '',
+            user.date_joined.strftime('%Y-%m-%d %H:%M:%S')
+        ])
+    
+    return response

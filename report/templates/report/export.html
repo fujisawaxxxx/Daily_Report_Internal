@@ -32,10 +32,23 @@
 
 {% block content %}
 <div class="export-container">
-    <h1>日報データのエクスポート</h1>
+    <h1>データのエクスポート</h1>
+    
+    <h2>日報データ</h2>
     <a href="{% url 'export_csv' %}" class="export-button">
-        <span style="color: white;">CSVファイルをダウンロード</span>
+        <span style="color: white;">日報CSVファイルをダウンロード</span>
     </a>
+    
+    <h2>ユーザー情報</h2>
+    <a href="{% url 'export_users_csv' %}" class="export-button">
+        <span style="color: white;">ユーザー情報CSVファイルをダウンロード</span>
+    </a>
+    
+    <div class="export-info">
+        <h3>エクスポート内容</h3>
+        <p><strong>日報データ:</strong> 全ての日報データと作業詳細</p>
+        <p><strong>ユーザー情報:</strong> ユーザー名、権限、グループ、メールアドレス情報</p>
+    </div>
 
 </div>
 {% endblock %}

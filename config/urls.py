@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from report.views import export_csv, export_view, import_csv
+from report.views import export_csv, export_view, import_csv, export_users_csv
 from django.shortcuts import redirect
 
 # 管理サイトのタイトルとヘッダーを変更
@@ -33,5 +33,6 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),  # 認証URL追加
     path('export/', export_view, name='export_view'),
     path('export/csv/', export_csv, name='export_csv'),
+    path('export/users/csv/', export_users_csv, name='export_users_csv'),
     path('import/csv/', import_csv, name='import_csv'),
 ]
