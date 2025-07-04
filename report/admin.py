@@ -306,20 +306,17 @@ class DailyReportAdmin(admin.ModelAdmin):
         if not change:
             obj.user = request.user
 
-        # --- ここで "提出前の状態" を取得しておく -------------
-        already_submitted = False
-        if change and obj.pk:
-            already_submitted = DailyReport.objects.filter(pk=obj.pk, is_submitted=True).exists()
-
         # まず保存
         super().save_model(request, obj, form, change)
 
         # ボタンに応じてメール & メッセージ
-        if submitting and not already_submitted:        # ★提出済みなら送らない
-            self.send_notification_email(request.user, obj)
-            messages.success(request, "日報が提出されました")
-        elif submitting and already_submitted:
-            messages.info(request, "すでに提出済みの日報です（メールは再送しません）")
+        if submitting:
+            recipient_emails = self.send_notification_email(request.user, obj)
+            if recipient_emails:
+                email_list = ", ".join(recipient_emails)
+                messages.success(request, f"日報が提出されました。メールを送信しました: {email_list}")
+            else:
+                messages.success(request, "日報が提出されました。（メールアドレスが設定されていないためメールは送信されませんでした）")
         else:
             messages.info(request, "下書きを保存しました")
 
@@ -382,7 +379,7 @@ class DailyReportAdmin(admin.ModelAdmin):
             full_url = f"http://{domain}:8000{report_url}" if ':' not in domain else f"http://{domain}{report_url}"
         
         # メール本文を作成
-        message = f"{user.username}さんの日報が提出されました。\n"
+        message = f"{user.username}さんから日報が提出されました。\n"
         message += f"日付: {report.date}\n\n"
         
         # 日報へのURLを追加
@@ -399,33 +396,16 @@ class DailyReportAdmin(admin.ModelAdmin):
         # 送信先のメールアドレスを設定
         recipient_emails = []
         
-        # ユーザー自身のメールアドレスを使用（最優先）
+        # ログインしているユーザー（提出者）のメールアドレスのみを使用
         if user.email:
             recipient_emails.append(user.email)
         
-        # ユーザーの追加メールアドレスを取得
+        # ログインしているユーザーの追加メールアドレスを取得
         try:
             user_profile = UserProfile.objects.get(user=user)
             if user_profile.additional_email:
                 recipient_emails.append(user_profile.additional_email)
         except UserProfile.DoesNotExist:
-            pass
-            
-        # 上司のメールアドレス（リーダーグループのメンバー）を取得
-        try:
-            leader_group = Group.objects.get(name='リーダー')
-            leaders = User.objects.filter(groups=leader_group)
-            for leader in leaders:
-                if leader.email and leader.email != user.email:  # ユーザー自身が上司の場合は重複送信しない
-                    recipient_emails.append(leader.email)
-                # リーダーの追加メールアドレスも取得
-                try:
-                    leader_profile = UserProfile.objects.get(user=leader)
-                    if leader_profile.additional_email and leader_profile.additional_email not in recipient_emails:
-                        recipient_emails.append(leader_profile.additional_email)
-                except UserProfile.DoesNotExist:
-                    pass
-        except Group.DoesNotExist:
             pass
         
         # EMAIL_NOTIFICATIONの設定は使用しない
@@ -436,6 +416,8 @@ class DailyReportAdmin(admin.ModelAdmin):
                 logger.info(f"メール送信成功: {recipient_emails}")
             except Exception as e:
                 logger.error(f"メール送信エラー: {e}")
+        
+        return recipient_emails  # 送信先メールアドレスリストを返す
 
     # リクエストオブジェクトを保存するためのミドルウェア
     def changelist_view(self, request, extra_context=None):
