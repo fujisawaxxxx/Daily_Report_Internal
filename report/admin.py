@@ -375,8 +375,9 @@ class DailyReportAdmin(admin.ModelAdmin):
         if 'pythonanywhere' in domain:
             full_url = f"https://{domain}{report_url}"
         else:
-            # ローカル環境ではhttpとポート番号を使用
-            full_url = f"http://{domain}:8000{report_url}" if ':' not in domain else f"http://{domain}{report_url}"
+            # 社内サーバー（192.168.1.XXX）またはローカル環境
+            # ポート番号が含まれていない場合でも、80番ポート（デフォルト）なので追加不要
+            full_url = f"http://{domain}{report_url}"
         
         # メール本文を作成
         message = f"{user.username}さんから日報が提出されました。\n"

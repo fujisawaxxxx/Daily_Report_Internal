@@ -34,11 +34,22 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 print(SECRET_KEY)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # 環境変数からURL_SETを取得し、存在しない場合はデフォルト値を使用
 URL_SET = os.environ.get('URL_SET', 'asahikosoku.pythonanywhere.com')
 ALLOWED_HOSTS = ['192.168.1.196', 'localhost', '127.0.0.1', URL_SET]
+
+# CSRF信頼オリジン設定（Django 4+）
+CSRF_TRUSTED_ORIGINS = [
+    'http://192.168.1.196',
+    'https://192.168.1.196',
+    'https://asahikosoku.pythonanywhere.com',
+]
+
+# 逆プロキシ設定（Caddy経由のHTTPS対応）
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
 
 # クロスオリジンセキュリティ設定
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None  # 開発環境ではNoneに設定
@@ -106,6 +117,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 20,  # SQLite同時書き込み待機時間
+        }
     }
 }
 

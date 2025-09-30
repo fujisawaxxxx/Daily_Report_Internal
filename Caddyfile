@@ -1,0 +1,7 @@
+﻿:80 {
+    handle_path /static/* {
+        root * C:\srv\Daily_Report_Internal\static
+        file_server
+    }
+    reverse_proxy 127.0.0.1:8001
+}
